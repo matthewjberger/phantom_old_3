@@ -135,6 +135,154 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
+<blockquote>
+<p>If you wish to make an apple pie from scratch,</p>
+<p>you must first invent the universe.</p>
+<p>~ Carl Sagan</p>
+</blockquote>
+<p>Welcome to the exciting world of game development!</p>
+<p>To get started, we'll first need to setup our project structure.</p>
+<h2 id="creating-the-project-structure"><a class="header" href="#creating-the-project-structure">Creating the Project Structure</a></h2>
+<p>Let's create a new project! We will call our engine the <code>phantom</code> game engine.</p>
+<pre><code class="language-bash">cargo new --lib phantom
+cd phantom
+</code></pre>
+<p>Now we can create all of the libraries and applications we will need for this project.</p>
+<pre><code class="language-bash"># Applications
+cargo new --vcs none apps/editor
+cargo new --vcs none apps/viewer
+
+# Libraries
+cargo new --lib crates/phantom_app
+cargo new --lib crates/phantom_dependencies
+cargo new --lib crates/phantom_gui
+cargo new --lib crates/phantom_render
+cargo new --lib crates/phantom_world
+</code></pre>
+<h3 id="a-window-icon"><a class="header" href="#a-window-icon">A Window Icon</a></h3>
+<p>For our window, we'll want a nice looking icon. Let's copy the following png into a folder for later use.</p>
+<p><img src="images/phantom.png" alt="phantom-icon" /></p>
+<pre><code class="language-bash">mkdir assets/icons
+pushd assets/icons
+curl -O https://matthewjberger.xyz/phantom/images/phantom.png
+popd
+</code></pre>
+<h3 id="code-linting"><a class="header" href="#code-linting">Code Linting</a></h3>
+<p>To perform code linting we'll use <a href="https://github.com/rust-lang/rust-clippy">clippy</a>.</p>
+<p>First, let's install <code>clippy</code>:</p>
+<pre><code class="language-bash">rustup update
+rustup component add clippy
+</code></pre>
+<p>And then add a configuration file at the root named <code>clippy.toml</code> with the following contents:</p>
+<pre><code class="language-toml">too-many-lines-threshold = 80
+too-many-arguments-threshold = 5
+</code></pre>
+<blockquote>
+<p>These can be any settings you like, of course. <a href="https://rust-lang.github.io/rust-clippy/master/">Here is a list of valid clippy options</a>.</p>
+</blockquote>
+<p>Lints will be performed automatically by <code>vscode</code>. To lint manually, you can run <code>cargo clippy -p phantom</code>.</p>
+<h3 id="code-formatting"><a class="header" href="#code-formatting">Code Formatting</a></h3>
+<p>To perform code formatting we'll use <a href="https://github.com/rust-lang/rustfmt">rustfmt</a>.</p>
+<p>First, let's install <code>rustfmt</code>:</p>
+<pre><code class="language-bash">rustup update
+rustup component add rustfmt
+</code></pre>
+<p>And then add a configuration file at the root named <code>rustfmt.toml</code> with the following contents:</p>
+<pre><code class="language-toml">max_width = 100
+</code></pre>
+<blockquote>
+<p>These can be any settings you like, of course. <a href="https://rust-lang.github.io/rustfmt/?version=v1.5.0&amp;search=">Here is a list of valid rustfmt settings</a>.</p>
+</blockquote>
+<p>Formatting can be performed automatically by <code>vscode</code>. To format the project manually, you can run <code>cargo fmt --workspace</code>.</p>
+<h3 id="add-a-readme"><a class="header" href="#add-a-readme">Add a Readme</a></h3>
+<p>Our <code>README.md</code> looks like this:</p>
+<pre><code class="language-markdown"># Phantom
+
+Phantom is a 3D game engine written in Rust!
+
+## Development Prerequisites
+
+- [Rust](https://www.rust-lang.org/)
+
+## Instructions
+
+To run the visual editor for Phantom, run this command in the root directory:
+
+`cargo run --release --bin editor`.
+
+</code></pre>
+<h2 id="putting-it-all-together"><a class="header" href="#putting-it-all-together">Putting It All Together</a></h2>
+<p>Now to connect our existing projects to one another, we'll have to update the contents of some of our new source files.</p>
+<h3 id="connecting-our-libraries"><a class="header" href="#connecting-our-libraries">Connecting Our Libraries</a></h3>
+<p>Our game engine is designed as a library. We will want to make the various parts of the engine accessible by re-exporting them.</p>
+<p>Our <code>Cargo.toml</code> at the root should look like this:</p>
+<pre><code class="language-toml">[package]
+name = &quot;phantom&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+[workspace]
+default-members = [&quot;apps/*&quot;]
+members = [&quot;apps/*&quot;, &quot;crates/*&quot;]
+
+[dependencies]
+phantom_app = { path = &quot;crates/phantom_app&quot; }
+phantom_dependencies = { path = &quot;crates/phantom_dependencies&quot; }
+phantom_gui = { path = &quot;crates/phantom_gui&quot; }
+phantom_render = { path = &quot;crates/phantom_render&quot; }
+phantom_world = { path = &quot;crates/phantom_world&quot; }
+</code></pre>
+<p>Next, the <code>src/lib.rs</code> should look like this:</p>
+<pre><code class="language-rust noplaypen">pub mod app {
+    pub use phantom_app::*;
+}
+
+pub mod dependencies {
+    pub use phantom_dependencies::*;
+}
+
+pub mod gui {
+    pub use phantom_gui::*;
+}
+
+pub mod render {
+    pub use phantom_render::*;
+}
+
+pub mod world {
+    pub use phantom_world::*;
+}
+</code></pre>
+<p>This lets us access the public exports of all of our engine libraries, and applications will only need
+a single import of our engine.</p>
+<h3 id="handling-dependencies"><a class="header" href="#handling-dependencies">Handling Dependencies</a></h3>
+<p>To handle dependencies consistently across all of our projects,
+we have created a <code>phantom_dependencies</code> project. Here will we
+list all of our dependencies and re-export them. This helps
+ensure the same version of any given dependency is used across all of our modules.</p>
+<p>For the following apps:</p>
+<ul>
+<li><code>phantom_app</code></li>
+<li><code>phantom_gui</code></li>
+<li><code>phantom_render</code></li>
+<li><code>phantom_world</code></li>
+</ul>
+<p>Add our <code>phantom_dependencies</code> crate as a dependency in the corresponding <code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">phantom_dependencies = { path = &quot;../phantom_dependencies&quot; }
+</code></pre>
+<h3 id="connecting-our-apps"><a class="header" href="#connecting-our-apps">Connecting our Apps</a></h3>
+<p>For the following apps:</p>
+<ul>
+<li><code>editor</code></li>
+<li><code>viewer</code></li>
+</ul>
+<p>Add our main <code>phantom</code> crate as a dependency in the corresponding <code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">phantom = { path = &quot;../..&quot; }
+</code></pre>
+<h2 id="verifying-your-project"><a class="header" href="#verifying-your-project">Verifying your Project</a></h2>
+<p>Check your project so far with the following commands:</p>
+<pre><code class="language-bash">cargo check
+</code></pre>
 
                     </main>
 
