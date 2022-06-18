@@ -1,0 +1,15 @@
+[package]
+name = "phantom"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+default-members = ["apps/*"]
+members = ["apps/*", "crates/*"]
+
+[dependencies]
+phantom_app = { path = "crates/phantom_app" }
+phantom_dependencies = { path = "crates/phantom_dependencies" }
+phantom_gui = { path = "crates/phantom_gui" }
+phantom_render = { path = "crates/phantom_render" }
+phantom_world = { path = "crates/phantom_world" }
