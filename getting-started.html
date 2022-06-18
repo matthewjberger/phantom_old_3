@@ -137,8 +137,6 @@
                         <h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
 <h2 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h2>
 <p>This project requires the <a href="https://www.rust-lang.org/">Rust programming language</a>.</p>
-<p>The easiest way to get access to the Vulkan dependencies is to install <a href="https://vulkan.lunarg.com/sdk/home">the Vulkan SDK</a>. This provides access to the Vulkan Configurator, glslangvalidator, the debug layers, and other useful tools for working with Vulkan.</p>
-<p>The latest version of <code>GCC</code> and <code>CMake</code> will also be required for ffi bindings to C/C++ libraries.</p>
 <h2 id="development-environment-setup"><a class="header" href="#development-environment-setup">Development Environment Setup</a></h2>
 <p>Using <a href="https://code.visualstudio.com/">vscode</a> and <a href="https://github.com/rust-analyzer/rust-analyzer">rust-analyzer</a> with the rust-analyzer <a href="https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer">vscode extension</a> is recommended. However, any Rust development environment you are comfortable with will work.</p>
 <p>The <a href="https://doc.rust-lang.org/book/">official Rust book</a> is a great resource if you are new to Rust.</p>
@@ -153,7 +151,7 @@ Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.
 scoop install git 7zip 
 
 # Install the project's dependencies
-scoop install gcc cmake rustup
+scoop install rustup
 
 # Set the stable rust toolchain as the default toolchain
 rustup default stable
