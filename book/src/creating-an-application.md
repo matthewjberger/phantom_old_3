@@ -2,6 +2,8 @@
 
 To create various applications and games with our engine, we will need to handle tasks such as creating a window, tracking input from various sources (keyboard, controllers, etc), and keeping track of our application state. These tasks and more will all be encapsulated within our `phantom_app` crate!
 
+TODO: Mention adding state module to `lib.rs`
+
 ## Application Configuration
 
 We'll start off by creating a data structure representing our application's initial configuration. This will allow consumers of the crate to customize features such as window size, the title, the icon, etc.

@@ -7,6 +7,7 @@
   * [Project Setup](project-setup.md)
   * [Adding Dependencies](adding-dependencies.md)
   * [Creating an Application](creating-an-application.md)
+  * [Game States](game-states.md)
 
 * [Appendix](appendix.md)
   * [A - Further Reading](appendix-further-reading.md)
