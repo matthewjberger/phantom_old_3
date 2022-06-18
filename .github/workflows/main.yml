@@ -1,25 +1,69 @@
-name: Deploy to Github Pages
+on: [push, pull_request]
 
-on:
-  push:
-    branches:
-      - main
+name: Phantom CI
 
 jobs:
-  deploy:
+  check:
+    name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2
 
-      - name: Setup mdbook
-        uses: peaceiris/actions-mdbook@v1
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          mdbook-version: "latest"
+          profile: minimal
+          toolchain: stable
+          override: true
 
-      - run: cd book && mdbook build
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Run cargo check
+        uses: actions-rs/cargo@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./book/book
+          command: check
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
