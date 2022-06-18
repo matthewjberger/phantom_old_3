@@ -1,0 +1,13 @@
+[book]
+authors = ["Matthew J. Berger"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Let's Build a Game Engine!"
+
+[rust]
+edition = "2021"
+
+[output.html]
+default-theme = "dark"
+preferred-dark-theme = "ayu"
