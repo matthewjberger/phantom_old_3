@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Setup - Let&#x27;s Build a Game Engine in Rust</title>
+        <title>Project Setup - Game Engine Creation in Rust</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html" class="active"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.2.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="the-logging-backend.html"><strong aria-hidden="true">1.3.</strong> The Logging Backend</a></li></ol></li><li class="chapter-item expanded "><a href="creating-the-rendering-library.html"><strong aria-hidden="true">2.</strong> Creating the Rendering Library</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="render-trait.html"><strong aria-hidden="true">2.1.</strong> Render Trait</a></li><li class="chapter-item expanded "><a href="vulkan-backend.html"><strong aria-hidden="true">2.2.</strong> Vulkan Backend</a></li><li class="chapter-item expanded "><a href="using-the-renderer.html"><strong aria-hidden="true">2.3.</strong> Using the Renderer</a></li><li class="chapter-item expanded "><a href="vulkan-context.html"><strong aria-hidden="true">2.4.</strong> Vulkan Context</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="vulkan-instance.html"><strong aria-hidden="true">2.4.1.</strong> Vulkan Instance</a></li><li class="chapter-item expanded "><a href="vulkan-surface.html"><strong aria-hidden="true">2.4.2.</strong> Vulkan Surface</a></li><li class="chapter-item expanded "><a href="vulkan-physical-device.html"><strong aria-hidden="true">2.4.3.</strong> Vulkan Physical Device</a></li><li class="chapter-item expanded "><a href="vulkan-logical-device.html"><strong aria-hidden="true">2.4.4.</strong> Vulkan Logical Device</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">3.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">3.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">3.2.</strong> B - Keywords</a></li><li class="chapter-item expanded "><a href="appendix-vulkan-configurator.html"><strong aria-hidden="true">3.3.</strong> C - Vulkan Configurator</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html" class="active"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.2.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="the-logging-backend.html"><strong aria-hidden="true">1.3.</strong> The Logging Backend</a></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">2.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">2.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">2.2.</strong> B - Keywords</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -104,7 +104,7 @@
                         </button>
                     </div>
 
-                    <h1 class="menu-title">Let&#x27;s Build a Game Engine in Rust</h1>
+                    <h1 class="menu-title">Game Engine Creation in Rust</h1>
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -135,76 +135,6 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
-<p>The directory structure for the project will look like this:</p>
-<p><img src="images/file-structure.png" alt="file-structure" /></p>
-<h2 id="file-structure"><a class="header" href="#file-structure">File Structure</a></h2>
-<ul>
-<li><code>assets/</code>
-<ul>
-<li><code>hdr/</code>
-Contains HDR maps used for skyboxes and environment mapping</li>
-<li><code>models/</code>
-Contains 3D assets, such as *.gltf and *.glb files</li>
-<li><code>shaders/</code>
-Contains all of the shaders used in the project</li>
-</ul>
-</li>
-<li><code>crates/</code>
-<ul>
-<li><code>obsidian_app/</code>
-A library that handles the window and application input boilerplate</li>
-</ul>
-</li>
-<li><code>viewer/</code>
-An application that can render 3D models, developed over the course of this book</li>
-</ul>
-<h2 id="creating-the-file-structure"><a class="header" href="#creating-the-file-structure">Creating the File Structure</a></h2>
-<p>Create the project as a library:</p>
-<pre><code class="language-bash">cargo new --lib obsidian
-cd obsidian
-</code></pre>
-<p>Create the asset folders:</p>
-<pre><code class="language-bash">mkdir assets
-mkdir assets/hdr
-mkdir assets/icon
-mkdir assets/models
-mkdir assets/shaders
-</code></pre>
-<p>Edit <code>Cargo.toml</code> to make the project a cargo workspace:</p>
-<pre><code class="language-toml"># Leave the [package] section as is
-
-[workspace]
-members = [&quot;crates/*&quot;, &quot;viewer&quot;]
-default-members = [&quot;viewer&quot;]
-
-[dependencies]
-obsidian_app = { path = &quot;crates/obsidian_app&quot; }
-</code></pre>
-<p>Create the application crate as a library:</p>
-<pre><code class="language-bash">cargo new --lib crates/obsidian_app
-</code></pre>
-<p>Create and edit <code>crates/obsidian_app/src/app.rs</code> to add an <code>Application</code> struct. This will eventually contain everything needed for an <code>Obsidian</code> application, including a physics world, an entity component system, the renderer itself, and more.</p>
-<pre><code class="language-rust noplaypen">pub struct Application;
-</code></pre>
-<p>Update <code>crates/obsidian_app/src/lib.rs</code>:</p>
-<pre><code class="language-rust noplaypen">mod app;
-pub use self::app::*;
-</code></pre>
-<p>Edit <code>src/lib.rs</code> to reference the app library:</p>
-<pre><code class="language-rust noplaypen">pub mod app {
-    pub use obsidian_app::*;
-}
-</code></pre>
-<p>Create the viewer application:</p>
-<pre><code class="language-bash">cargo new viewer
-</code></pre>
-<p>Update the <code>viewer/cargo.toml</code> to reference all of obsidian as a single library.</p>
-<pre><code class="language-toml">[dependencies]
-obsidian = { path = &quot;..&quot; }
-</code></pre>
-<p>Now, run <code>cargo run --release</code> to compile and statically link the program. You should see:</p>
-<pre><code class="language-bash">&quot;Hello, world!&quot;
-</code></pre>
 
                     </main>
 
