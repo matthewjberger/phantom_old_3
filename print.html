@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.2.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="the-logging-backend.html"><strong aria-hidden="true">1.3.</strong> The Logging Backend</a></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">2.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">2.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">2.2.</strong> B - Keywords</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="adding-dependencies.html"><strong aria-hidden="true">1.2.</strong> Adding Dependencies</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.3.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="the-logging-backend.html"><strong aria-hidden="true">1.4.</strong> The Logging Backend</a></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">2.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">2.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">2.2.</strong> B - Keywords</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -314,7 +314,7 @@ pub mod world {
 }
 </code></pre>
 <p>This lets us access the public exports of all of our engine libraries, and applications will only need
-a single import of our engine.</p>
+a single import of our main engine library.</p>
 <h3 id="handling-dependencies"><a class="header" href="#handling-dependencies">Handling Dependencies</a></h3>
 <p>To handle dependencies consistently across all of our projects,
 we have created a <code>phantom_dependencies</code> project. Here will we
@@ -343,22 +343,48 @@ ensure the same version of any given dependency is used across all of our module
 <p>Check your project so far with the following commands:</p>
 <pre><code class="language-bash">cargo check
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-an-application"><a class="header" href="#creating-an-application">Creating an Application</a></h1>
-<h2 id="adding-necessary-dependencies"><a class="header" href="#adding-necessary-dependencies">Adding necessary dependencies</a></h2>
-<pre><code>cargo install cargo-edit
-
-cargo add anyhow -p phantom_dependencies
+<div style="break-before: page; page-break-before: always;"></div><h1 id="adding-dependencies"><a class="header" href="#adding-dependencies">Adding dependencies</a></h1>
+<p>To make adding dependencies easier, we'll install a cargo extension called <a href="https://github.com/killercup/cargo-edit">cargo-edit</a>.</p>
+<pre><code class="language-bash">cargo install cargo-edit
+</code></pre>
+<p>Then we can use it to add some dependencies to our <code>phantom_dependencies</code> crate.</p>
+<pre><code class="language-bash">cargo add anyhow -p phantom_dependencies
 cargo add env_logger -p phantom_dependencies 
 cargo add log -p phantom_dependencies
 cargo add thiserror -p phantom_dependencies
 </code></pre>
-<p>Then in <code>phantom_dependencies/lib.rs</code>:</p>
-<pre><code>pub use anyhow;
+<p>Now we re-export these dependencies in <code>phantom_dependencies/lib.rs</code>:</p>
+<pre><code class="language-rust noplaypen">pub use anyhow;
 pub use env_logger;
 pub use log;
 pub use thiserror;
-`
 </code></pre>
+<p>We will continue following this pattern whenever we add dependencies to the project!</p>
+<p>The dependencies we have added are:</p>
+<ul>
+<li><a href="https://github.com/dtolnay/anyhow">anyhow</a> 
+<ul>
+<li>Flexible concrete Error type built on <code>std::error::Error</code>. We will use this in our applications, which do not need to return detailed, complex error types.</li>
+</ul>
+</li>
+<li><a href="https://github.com/dtolnay/thiserror">thiserror</a>
+<ul>
+<li>A <code>derive(Error)</code> for struct and enum error types. We will use this in our engine and its libraries, so that we can return detailed, descriptive error types. This will ultimately make debugging easier.</li>
+</ul>
+</li>
+<li><a href="https://github.com/rust-lang/log">log</a>
+<ul>
+<li>The standard Rust logger facade.</li>
+</ul>
+</li>
+<li><a href="https://github.com/dtolnay/anyhow">env_logger</a>
+<ul>
+<li>An implementation of the standard rust logger facade that is configured using environment variables.</li>
+</ul>
+</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-an-application"><a class="header" href="#creating-an-application">Creating an Application</a></h1>
+<p>TBD</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="the-logging-backend"><a class="header" href="#the-logging-backend">The Logging Backend</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="a---further-reading"><a class="header" href="#a---further-reading">A - Further Reading</a></h1>
