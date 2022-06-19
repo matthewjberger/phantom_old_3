@@ -388,7 +388,6 @@ pub use thiserror;
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="creating-an-application"><a class="header" href="#creating-an-application">Creating an Application</a></h1>
 <p>To create various applications and games with our engine, we will need to handle tasks such as creating a window, tracking input from various sources (keyboard, controllers, etc), and keeping track of our application state. These tasks and more will all be encapsulated within our <code>phantom_app</code> crate!</p>
-<p>TODO: Mention adding state module to <code>lib.rs</code></p>
 <h2 id="application-configuration"><a class="header" href="#application-configuration">Application Configuration</a></h2>
 <p>We'll start off by creating a data structure representing our application's initial configuration. This will allow consumers of the crate to customize features such as window size, the title, the icon, etc.</p>
 <p>In our <code>crates/phantom_app/lib.rs</code> we'll replace the contents of the file with the following:</p>
@@ -585,6 +584,12 @@ fn main() -&gt; Result&lt;()&gt; {
 <p>The state on top of the stack is what will be shown in the application. Imagine you are playing a game and you press the pause button. With a state machine, we can simply push another state onto the stack (such as a <code>GamePaused</code> state). When we unpause, the state can be popped off the stack and gameplay will resume. This opens the doors to splash screens, loading screens, pause menus, and much more. This flexibility is valuable when trying to manage resources efficiently and write modular code for your game.</p>
 <h2 id="designing-a-state-machine"><a class="header" href="#designing-a-state-machine">Designing a State Machine</a></h2>
 <p>To begin, let's define a trait to represent state in our games. For the <code>Result</code> type, we will use <code>anyhow::Result</code> because these will be implemented by the application rather than our library.</p>
+<p>Declare the <code>state</code> module in <code>crates/phantom_app/lib.rs</code>.</p>
+<pre><code class="language-rust noplaypen">...
+mod state;
+
+pub use self::{ ..., state::* };
+</code></pre>
 <p>Create a file named <code>crates/phantom_app/state.rs</code> with the following contents.</p>
 <pre><code class="language-rust noplaypen">use crate::Resources;
 use phantom_dependencies::{
@@ -870,8 +875,6 @@ fn run_loop(
     }
     Ok(())
 }
-
-
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="a---further-reading"><a class="header" href="#a---further-reading">A - Further Reading</a></h1>
