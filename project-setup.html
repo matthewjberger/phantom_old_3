@@ -270,6 +270,9 @@ ensure the same version of any given dependency is used across all of our module
 <p>Add our <code>phantom_dependencies</code> crate as a dependency in the corresponding <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">phantom_dependencies = { path = &quot;../phantom_dependencies&quot; }
 </code></pre>
+<blockquote>
+<p>Some macros only work if the crate they are exported from is included in the dependencies for the project it is used in, but this will cover the majority of our dependencies.</p>
+</blockquote>
 <h3 id="connecting-our-apps"><a class="header" href="#connecting-our-apps">Connecting our Apps</a></h3>
 <p>For the following apps:</p>
 <ul>
@@ -280,7 +283,7 @@ ensure the same version of any given dependency is used across all of our module
 <pre><code class="language-toml">phantom = { path = &quot;../..&quot; }
 </code></pre>
 <h2 id="verifying-your-project"><a class="header" href="#verifying-your-project">Verifying your Project</a></h2>
-<p>Check your project so far with the following commands:</p>
+<p>Check your project so far with the following command:</p>
 <pre><code class="language-bash">cargo check
 </code></pre>
 

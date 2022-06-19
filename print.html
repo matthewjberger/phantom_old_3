@@ -330,6 +330,9 @@ ensure the same version of any given dependency is used across all of our module
 <p>Add our <code>phantom_dependencies</code> crate as a dependency in the corresponding <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">phantom_dependencies = { path = &quot;../phantom_dependencies&quot; }
 </code></pre>
+<blockquote>
+<p>Some macros only work if the crate they are exported from is included in the dependencies for the project it is used in, but this will cover the majority of our dependencies.</p>
+</blockquote>
 <h3 id="connecting-our-apps"><a class="header" href="#connecting-our-apps">Connecting our Apps</a></h3>
 <p>For the following apps:</p>
 <ul>
@@ -340,7 +343,7 @@ ensure the same version of any given dependency is used across all of our module
 <pre><code class="language-toml">phantom = { path = &quot;../..&quot; }
 </code></pre>
 <h2 id="verifying-your-project"><a class="header" href="#verifying-your-project">Verifying your Project</a></h2>
-<p>Check your project so far with the following commands:</p>
+<p>Check your project so far with the following command:</p>
 <pre><code class="language-bash">cargo check
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="adding-dependencies"><a class="header" href="#adding-dependencies">Adding dependencies</a></h1>
@@ -435,15 +438,7 @@ pub use self::{
 </code></pre>
 <h3 id="storing-application-resources"><a class="header" href="#storing-application-resources">Storing Application Resources</a></h3>
 <p>Create the file <code>phantom_app/src/resources.rs</code> with the following contents:</p>
-<pre><code class="language-rust noplaypen">use phantom_dependencies::{thiserror::Error, winit::window::Window};
-
-#[derive(Error, Debug)]
-pub enum ResourceError {
-    #[error(&quot;Unknown resource error&quot;)]
-    Unknown,
-}
-
-// type Result&lt;T, E = ResourceError&gt; = std::result::Result&lt;T, E&gt;;
+<pre><code class="language-rust noplaypen">use phantom_dependencies::winit::window::Window;
 
 pub struct Resources&lt;'a&gt; {
     pub window: &amp;'a mut Window,
@@ -457,9 +452,11 @@ impl&lt;'a&gt; Resources&lt;'a&gt; {
 </code></pre>
 <h2 id="application-creation"><a class="header" href="#application-creation">Application Creation</a></h2>
 <p>Now we can do something exciting and get a window visible on screen!</p>
-<p>Let's add the following code to <code>phantom_app/src/app.rs</code>.</p>
+<p>First, run the following command to allow macros from <code>thiserror</code> to work for <code>phantom_app</code>:</p>
+<pre><code class="language-bash">cargo add thiserror -p phantom_app
+</code></pre>
+<p>Now, let's add the following code to <code>phantom_app/src/app.rs</code>.</p>
 <pre><code class="language-rust noplaypen">use crate::Resources;
-use crate::Resources;
 use phantom_dependencies::{
     env_logger,
     image::{self, io::Reader},
@@ -478,15 +475,16 @@ use phantom_dependencies::{
 #[derive(Error, Debug)]
 pub enum ApplicationError {
     #[error(transparent)]
-    LoadIcon(#[from] std::io::Error),
+    IoError(#[from] std::io::Error),
     #[error(transparent)]
-    DecodeIcon(#[from] image::ImageError),
+    ImageError(#[from] image::ImageError),
     #[error(transparent)]
-    CreateIcon(#[from] winit::window::BadIcon),
+    BadIcon(#[from] winit::window::BadIcon),
+    #[error(transparent)]
+    OsError(#[from] winit::error::OsError),
     #[error(&quot;Unknown application error&quot;)]
     Unknown,
 }
-
 
 type Result&lt;T, E = ApplicationError&gt; = std::result::Result&lt;T, E&gt;;
 
