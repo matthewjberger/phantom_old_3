@@ -1,6 +1,6 @@
-use crate::Resources;
+use crate::{Resources, State, StateMachine};
 use phantom_dependencies::{
-    env_logger,
+    anyhow, env_logger,
     image::{self, io::Reader},
     log,
     thiserror::Error,
@@ -23,6 +23,8 @@ pub enum ApplicationError {
     BadIcon(#[from] winit::window::BadIcon),
     #[error(transparent)]
     OsError(#[from] winit::error::OsError),
+    #[error(transparent)]
+    AnyhowError(#[from] anyhow::Error),
     #[error("Unknown application error")]
     Unknown,
 }
@@ -49,7 +51,7 @@ impl Default for AppConfig {
     }
 }
 
-pub fn run(config: AppConfig) -> Result<()> {
+pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()> {
     env_logger::init();
     log::info!("Phantom app started");
 
@@ -71,18 +73,35 @@ pub fn run(config: AppConfig) -> Result<()> {
         window.set_fullscreen(Some(Fullscreen::Borderless(window.primary_monitor())));
     }
 
+    let mut state_machine = StateMachine::new(initial_state);
+
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
             window: &mut window,
         };
-        if let Err(error) = run_loop(&event, control_flow, resources) {
+        if let Err(error) = run_loop(&mut state_machine, &event, control_flow, resources) {
             log::error!("Application error: {}", error);
         }
     });
 }
 
-fn run_loop(event: &Event<()>, control_flow: &mut ControlFlow, resources: Resources) -> Result<()> {
+fn run_loop(
+    state_machine: &mut StateMachine,
+    event: &Event<()>,
+    control_flow: &mut ControlFlow,
+    mut resources: Resources,
+) -> Result<()> {
+    if !state_machine.is_running() {
+        state_machine.start(&mut resources)?;
+    }
+
+    state_machine.handle_event(&mut resources, event)?;
+
     match event {
+        Event::MainEventsCleared => {
+            state_machine.update(&mut resources)?;
+        }
+
         Event::WindowEvent {
             ref event,
             window_id,
@@ -95,6 +114,16 @@ fn run_loop(event: &Event<()>, control_flow: &mut ControlFlow, resources: Resour
                 {
                     *control_flow = ControlFlow::Exit;
                 }
+
+                state_machine.on_key(&mut resources, *input)?;
+            }
+
+            WindowEvent::MouseInput { button, state, .. } => {
+                state_machine.on_mouse(&mut resources, button, state)?;
+            }
+
+            WindowEvent::DroppedFile(ref path) => {
+                state_machine.on_file_dropped(&mut resources, path)?;
             }
 
             _ => {}
