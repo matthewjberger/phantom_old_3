@@ -135,7 +135,195 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="creating-an-application"><a class="header" href="#creating-an-application">Creating an Application</a></h1>
-<p>TBD</p>
+<p>To create various applications and games with our engine, we will need to handle tasks such as creating a window, tracking input from various sources (keyboard, controllers, etc), and keeping track of our application state. These tasks and more will all be encapsulated within our <code>phantom_app</code> crate!</p>
+<h2 id="application-configuration"><a class="header" href="#application-configuration">Application Configuration</a></h2>
+<p>We'll start off by creating a data structure representing our application's initial configuration. This will allow consumers of the crate to customize features such as window size, the title, the icon, etc.</p>
+<p>In our <code>crates/phantom_app/lib.rs</code> we'll replace the contents of the file with the following:</p>
+<pre><code class="language-rust noplaypen">mod app;
+
+pub use self::app::*;
+</code></pre>
+<p>Now we will create a file named <code>crates/phantom_app/app.rs</code> and begin building our application config.</p>
+<pre><code class="language-rust noplaypen">pub struct AppConfig {
+    pub width: u32,
+    pub height: u32,
+    pub is_fullscreen: bool,
+    pub title: String,
+    pub icon: Option&lt;String&gt;,
+}
+
+impl Default for AppConfig {
+    fn default() -&gt; Self {
+        Self {
+            width: 1024,
+            height: 768,
+            is_fullscreen: false,
+            title: &quot;Phantom Application&quot;.to_string(),
+            icon: None,
+        }
+    }
+}
+</code></pre>
+<h2 id="application-dependencies"><a class="header" href="#application-dependencies">Application Dependencies</a></h2>
+<p>Creating a window requires different boilerplate on each platform. Thankfully an excellent open source library for handling window creation named <a href="https://github.com/rust-windowing/winit">winit</a> exists.</p>
+<p>Let's add that to our <code>phantom_dependencies</code> project:</p>
+<pre><code class="language-bash">cargo add winit -p phantom_dependencies
+</code></pre>
+<p>And let's not forget to re-export it in <code>crates/phantom_dependencies/lib.rs</code>!</p>
+<pre><code class="language-rust noplaypen">pub use winit;
+</code></pre>
+<h2 id="application-resources"><a class="header" href="#application-resources">Application Resources</a></h2>
+<p>Let's create another module to store resources necessary for the application to run.</p>
+<h3 id="declaring-the-resources-module"><a class="header" href="#declaring-the-resources-module">Declaring the Resources Module</a></h3>
+<p>In our <code>crates/phantom_app/lib.rs</code> we'll declare and export the <code>resources</code> module.</p>
+<pre><code class="language-rust noplaypen">...
+mod resources;
+
+pub use self::{
+    // ...
+    resources::*,
+};
+</code></pre>
+<h3 id="storing-application-resources"><a class="header" href="#storing-application-resources">Storing Application Resources</a></h3>
+<p>Create the file <code>phantom_app/src/resources.rs</code> with the following contents:</p>
+<pre><code class="language-rust noplaypen">use phantom_dependencies::{thiserror::Error, winit::window::Window};
+
+#[derive(Error, Debug)]
+pub enum ResourceError {
+    #[error(&quot;Unknown resource error&quot;)]
+    Unknown,
+}
+
+// type Result&lt;T, E = ResourceError&gt; = std::result::Result&lt;T, E&gt;;
+
+pub struct Resources&lt;'a&gt; {
+    pub window: &amp;'a mut Window,
+}
+
+impl&lt;'a&gt; Resources&lt;'a&gt; {
+    pub fn set_cursor_visible(&amp;mut self, visible: bool) {
+        self.window.set_cursor_visible(visible)
+    }
+}
+</code></pre>
+<h2 id="application-creation"><a class="header" href="#application-creation">Application Creation</a></h2>
+<p>Now we can do something exciting and get a window visible on screen!</p>
+<p>Let's add the following code to <code>phantom_app/src/app.rs</code>.</p>
+<pre><code class="language-rust noplaypen">use crate::Resources;
+use crate::Resources;
+use phantom_dependencies::{
+    env_logger,
+    image::{self, io::Reader},
+    log,
+    thiserror::Error,
+    winit::{
+        self,
+        dpi::PhysicalSize,
+        event::{ElementState, Event, VirtualKeyCode, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        window::{Icon, WindowBuilder},
+    },
+};
+
+
+#[derive(Error, Debug)]
+pub enum ApplicationError {
+    #[error(transparent)]
+    LoadIcon(#[from] std::io::Error),
+    #[error(transparent)]
+    DecodeIcon(#[from] image::ImageError),
+    #[error(transparent)]
+    CreateIcon(#[from] winit::window::BadIcon),
+    #[error(&quot;Unknown application error&quot;)]
+    Unknown,
+}
+
+
+type Result&lt;T, E = ApplicationError&gt; = std::result::Result&lt;T, E&gt;;
+
+// ...
+
+pub fn run(config: AppConfig) -&gt; Result&lt;()&gt; {
+    env_logger::init();
+    log::info!(&quot;Phantom app started&quot;);
+
+    let event_loop = EventLoop::new();
+    let mut window_builder = WindowBuilder::new()
+        .with_title(config.title.to_string())
+        .with_inner_size(PhysicalSize::new(config.width, config.height));
+
+    // TODO: Load the window icon
+
+    let mut window = window_builder.build(&amp;event_loop)?;
+
+    event_loop.run(move |event, _, control_flow| {
+        let resources = Resources {
+            window: &amp;mut window,
+        };
+        if let Err(error) = run_loop(&amp;event, control_flow, resources) {
+            log::error!(&quot;Application error: {}&quot;, error);
+        }
+    });
+}
+
+fn run_loop(event: &amp;Event&lt;()&gt;, control_flow: &amp;mut ControlFlow, resources: Resources) -&gt; Result&lt;()&gt; {
+    match event {
+        Event::WindowEvent {
+            ref event,
+            window_id,
+        } if *window_id == resources.window.id() =&gt; match event {
+            WindowEvent::CloseRequested =&gt; *control_flow = ControlFlow::Exit,
+
+            WindowEvent::KeyboardInput { input, .. } =&gt; {
+                if let (Some(VirtualKeyCode::Escape), ElementState::Pressed) =
+                    (input.virtual_keycode, input.state)
+                {
+                    *control_flow = ControlFlow::Exit;
+                }
+            }
+
+            _ =&gt; {}
+        },
+        _ =&gt; {}
+    }
+    Ok(())
+}
+
+</code></pre>
+<h3 id="loading-the-window-icon"><a class="header" href="#loading-the-window-icon">Loading the Window Icon</a></h3>
+<p>To load the window icon, we'll need a library for loading images. We'll use the <a href="https://crates.io/crates/image">image</a> crate.</p>
+<pre><code class="language-bash">cargo add image -p phantom_dependencies
+</code></pre>
+<p>Then re-export it in <code>phantom_dependencies/lib.rs</code>.</p>
+<pre><code class="language-rust noplaypen">pub use image;
+</code></pre>
+<p>Now we can replace our <code>TODO</code> with the following code!</p>
+<pre><code class="language-rust noplaypen">if let Some(icon_path) = config.icon.as_ref() {
+    let image = Reader::open(icon_path)?.decode()?.into_rgba8();
+    let (width, height) = image.dimensions();
+    let icon = Icon::from_rgba(image.into_raw(), width, height)?;
+    window_builder = window_builder.with_window_icon(Some(icon));
+}
+</code></pre>
+<h3 id="instantiating-the-editor"><a class="header" href="#instantiating-the-editor">Instantiating the Editor</a></h3>
+<p>Now that we've written the necessary window creation code in our library, we can setup our <code>editor</code> application.</p>
+<p>Replace the contents of <code>apps/editor/src/main.rs</code> with the following code.</p>
+<pre><code class="language-rust noplaypen">use phantom::{
+    app::{run, AppConfig},
+    dependencies::anyhow::Result,
+};
+
+#[derive(Default)]
+pub struct Editor;
+
+fn main() -&gt; Result&lt;()&gt; {
+    Ok(run(AppConfig {
+        // icon: Some(&quot;assets/icon/phantom.png&quot;.to_string()),
+        ..Default::default()
+    })?)
+}
+</code></pre>
+<p>Run the application again with <code>cargo run -r --bin editor</code> and you should see a blank window with our phantom logo!</p>
 
                     </main>
 
