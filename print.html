@@ -581,7 +581,7 @@ fn main() -&gt; Result&lt;()&gt; {
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="game-states"><a class="header" href="#game-states">Game States</a></h1>
 <p>Games often have separate maps, levels, areas, and more to wander through. It would not make sense to have all of the assets loaded in memory all of the time, because it would easily consume too much memory and cause unplayable framerates or worse, crashes!</p>
-<p>A common way of determining which assets to load and what to display on screen is through the use of <code>GameState</code>s. Using these in a stack effectively gives us a <a href="https://developer.mozilla.org/en-US/docs/Glossary/State_machine">state machine</a> that composes our <code>GameState</code>s.</p>
+<p>A common way of determining which assets to load and what to display on screen is through the use of <code>GameStates</code>. Using these in a stack effectively gives us a <a href="https://developer.mozilla.org/en-US/docs/Glossary/State_machine">state machine</a> that composes our <code>GameStates</code>.</p>
 <p>The state on top of the stack is what will be shown in the application. Imagine you are playing a game and you press the pause button. With a state machine, we can simply push another state onto the stack (such as a <code>GamePaused</code> state). When we unpause, the state can be popped off the stack and gameplay will resume. This opens the doors to splash screens, loading screens, pause menus, and much more. This flexibility is valuable when trying to manage resources efficiently and write modular code for your game.</p>
 <h2 id="designing-a-state-machine"><a class="header" href="#designing-a-state-machine">Designing a State Machine</a></h2>
 <p>To begin, let's define a trait to represent state in our games. For the <code>Result</code> type, we will use <code>anyhow::Result</code> because these will be implemented by the application rather than our library.</p>
@@ -655,11 +655,11 @@ pub trait State {
 </code></pre>
 <p>With these traits defined, we are ready to define our <code>StateMachine</code>.</p>
 <p>Note that the states are not public, as they should be accessed internally by the state machine itself. All methods on the state resolve to a <code>Transition</code> that is used to determine whether or not transition the state machine. These transitions should happen automatically from the user's perspective!</p>
-<pre><code class="language-rust noplaypen">pub struct StateMachine {
+<pre><code class="language-rust noplaypen">
+pub struct StateMachine {
     running: bool,
     states: Vec&lt;Box&lt;dyn State&gt;&gt;,
 }
-
 
 impl StateMachine {
     pub fn new(initial_state: impl State + 'static) -&gt; Self {
@@ -669,105 +669,139 @@ impl StateMachine {
         }
     }
 
-    fn current_state(&amp;mut self) -&gt; Result&lt;&amp;mut Box&lt;(dyn State + 'static)&gt;&gt; {
-        self.states
-            .last_mut()
-            .context(&quot;Tried to access state in state machine with no states present!&quot;)
-    }
-
     pub fn is_running(&amp;self) -&gt; bool {
         self.running
     }
 
     pub fn start(&amp;mut self, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if !self.running {
-            let state = self.current_state()?;
-            state.on_start(resources)?;
-            self.running = true;
+        if self.running {
+            return Ok(());
         }
-        Ok(())
+        self.running = true;
+        self.active_state_mut()?.on_start(resources)
     }
 
     pub fn handle_event(&amp;mut self, resources: &amp;mut Resources, event: &amp;Event&lt;()&gt;) -&gt; Result&lt;()&gt; {
-        if self.running {
-            let transition = match self.states.last_mut() {
-                Some(state) =&gt; state.on_event(resources, &amp;event)?,
-                None =&gt; Transition::None,
-            };
-            self.transition(transition, resources)?;
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+        let transition = self.active_state_mut()?.on_event(resources, &amp;event)?;
+        self.transition(transition, resources)
     }
 
     pub fn update(&amp;mut self, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            let transition = match self.states.last_mut() {
-                Some(state) =&gt; state.update(resources)?,
-                None =&gt; Transition::None,
-            };
-            self.transition(transition, resources)?;
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+        let transition = self.active_state_mut()?.update(resources)?;
+        self.transition(transition, resources)
     }
 
-    pub fn transition(&amp;mut self, request: Transition, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            match request {
-                Transition::None =&gt; (),
-                Transition::Pop =&gt; self.pop(resources)?,
-                Transition::Push(state) =&gt; self.push(state, resources)?,
-                Transition::Switch(state) =&gt; self.switch(state, resources)?,
-                Transition::Quit =&gt; self.stop(resources)?,
-            }
+    pub fn on_file_dropped(&amp;mut self, resources: &amp;mut Resources, path: &amp;PathBuf) -&gt; Result&lt;()&gt; {
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+        let transition = self.active_state_mut()?.on_file_dropped(resources, path)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_mouse(
+        &amp;mut self,
+        resources: &amp;mut Resources,
+        button: &amp;MouseButton,
+        button_state: &amp;ElementState,
+    ) -&gt; Result&lt;()&gt; {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self
+            .active_state_mut()?
+            .on_mouse(resources, button, button_state)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_key(&amp;mut self, resources: &amp;mut Resources, input: KeyboardInput) -&gt; Result&lt;()&gt; {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self.active_state_mut()?.on_key(resources, input)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_event(&amp;mut self, resources: &amp;mut Resources, event: &amp;Event&lt;()&gt;) -&gt; Result&lt;()&gt; {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self.active_state_mut()?.on_event(resources, event)?;
+        self.transition(transition, resources)
+    }
+
+    fn transition(&amp;mut self, request: Transition, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
+        if !self.running {
+            return Ok(());
+        }
+        match request {
+            Transition::None =&gt; Ok(()),
+            Transition::Pop =&gt; self.pop(resources),
+            Transition::Push(state) =&gt; self.push(state, resources),
+            Transition::Switch(state) =&gt; self.switch(state, resources),
+            Transition::Quit =&gt; self.stop(resources),
+        }
+    }
+
+    fn active_state_mut(&amp;mut self) -&gt; Result&lt;&amp;mut Box&lt;(dyn State + 'static)&gt;&gt; {
+        self.states
+            .last_mut()
+            .context(&quot;Tried to access state in state machine with no states present!&quot;)
     }
 
     fn switch(&amp;mut self, state: Box&lt;dyn State&gt;, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            if let Some(mut state) = self.states.pop() {
-                state.on_stop(resources)?;
-            }
-            self.states.push(state);
-            let new_state = self.current_state()?;
-            new_state.on_start(resources)?;
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+        if let Some(mut state) = self.states.pop() {
+            state.on_stop(resources)?;
+        }
+        self.states.push(state);
+        self.active_state_mut()?.on_start(resources)
     }
 
     fn push(&amp;mut self, state: Box&lt;dyn State&gt;, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            if let Ok(state) = self.current_state() {
-                state.on_pause(resources)?;
-            }
-            self.states.push(state);
-            let new_state = self.current_state()?;
-            new_state.on_start(resources)?;
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+        if let Ok(state) = self.active_state_mut() {
+            state.on_pause(resources)?;
+        }
+        self.states.push(state);
+        self.active_state_mut()?.on_start(resources)
     }
 
     fn pop(&amp;mut self, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            if let Some(mut state) = self.states.pop() {
-                state.on_stop(resources)?;
-            }
-            if let Some(state) = self.states.last_mut() {
-                state.on_resume(resources)?;
-            } else {
-                self.running = false;
-            }
+        if !self.running {
+            return Ok(());
         }
-        Ok(())
+
+        if let Some(mut state) = self.states.pop() {
+            state.on_stop(resources)?;
+        }
+
+        if let Some(state) = self.states.last_mut() {
+            state.on_resume(resources)
+        } else {
+            self.running = false;
+            Ok(())
+        }
     }
 
     pub fn stop(&amp;mut self, resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
-        if self.running {
-            while let Some(mut state) = self.states.pop() {
-                state.on_stop(resources)?;
-            }
-            self.running = false;
+        if !self.running {
+            return Ok(());
         }
+        while let Some(mut state) = self.states.pop() {
+            state.on_stop(resources)?;
+        }
+        self.running = false;
         Ok(())
     }
 }
