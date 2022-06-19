@@ -240,3 +240,78 @@ impl StateMachine {
     }
 }
 ```
+
+## Using the State Machine
+
+To use the state machine, we'll want to modify our `crates/phantom_app/src/app.rs`.
+
+We should now create a state_machine and pass it to our `run_loop` function.
+
+```rust,noplaypen
+
+pub fn run(initial_state: impl State + 'static, ...) {
+    ...
+    let mut state_machine = StateMachine::new(initial_state);
+    ...
+    event_loop.run(move |event, _, control_flow| {
+        ...
+        if let Err(error) = run_loop(&mut state_machine, &event, control_flow, resources) {
+            ...
+        }
+    });
+}
+
+fn run_loop(
+    state_machine: &mut StateMachine,
+    ...,
+) {
+    ...
+}
+```
+
+This allows us to use the `state_machine` in our event handlers!
+
+```rust,noplaypen
+
+fn run_loop(
+    ...
+) -> Result<()> {
+    if !state_machine.is_running() {
+        state_machine.start(&mut resources)?;
+    }
+
+    state_machine.handle_event(&mut resources, event)?;
+
+    match event {
+        Event::MainEventsCleared => {
+            state_machine.update(&mut resources)?;
+        }
+
+        Event::WindowEvent {
+            ref event,
+            window_id,
+        } if *window_id == resources.window.id() => match event {
+            WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+
+            WindowEvent::KeyboardInput { input, .. } => {
+                ...
+                state_machine.on_key(&mut resources, *input)?;
+            }
+
+            WindowEvent::MouseInput { button, state, .. } => {
+                state_machine.on_mouse(&mut resources, button, state)?;
+            }
+
+            WindowEvent::DroppedFile(ref path) => {
+                state_machine.on_file_dropped(&mut resources, path)?;
+            }
+
+            _ => {}
+        },
+        _ => {}
+    }
+    Ok(())
+}
+
+
+```
