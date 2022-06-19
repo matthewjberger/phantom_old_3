@@ -161,8 +161,8 @@
 <h2 id="chapter-1"><a class="header" href="#chapter-1">Chapter 1</a></h2>
 <ul>
 <li>Set up the project structure</li>
-<li>Get a window up and running</li>
 <li>Create the boilerplate code used throughout the rest of the book</li>
+<li>Get a window up and running</li>
 </ul>
 <p>The code in this chapter will serve as the project's foundation.</p>
 <p><img src="images/chapter1.png" alt="chapter-1" /></p>
@@ -573,6 +573,13 @@ fn main() -&gt; Result&lt;()&gt; {
 }
 </code></pre>
 <p>Run the application again with <code>cargo run -r --bin editor</code> and you should see a blank window with our phantom logo!</p>
+<blockquote>
+<p>To view the console logs, set the <code>RUST_LOG</code> environment variable to <code>debug</code></p>
+<p>Mac/Linux:
+RUST_LOG=&quot;debug&quot;</p>
+<p>Windows (powershell):
+$env:RUST_LOG=&quot;debug&quot;</p>
+</blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="a---further-reading"><a class="header" href="#a---further-reading">A - Further Reading</a></h1>
 <ul>
