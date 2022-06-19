@@ -10,6 +10,15 @@ The state on top of the stack is what will be shown in the application. Imagine 
 
 To begin, let's define a trait to represent state in our games. For the `Result` type, we will use `anyhow::Result` because these will be implemented by the application rather than our library.
 
+Declare the `state` module in `crates/phantom_app/lib.rs`.
+
+```rust,noplaypen
+...
+mod state;
+
+pub use self::{ ..., state::* };
+```
+
 Create a file named `crates/phantom_app/state.rs` with the following contents.
 
 ```rust,noplaypen
@@ -312,6 +321,4 @@ fn run_loop(
     }
     Ok(())
 }
-
-
 ```
