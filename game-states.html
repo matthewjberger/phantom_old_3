@@ -361,6 +361,73 @@ impl StateMachine {
     }
 }
 </code></pre>
+<h2 id="using-the-state-machine"><a class="header" href="#using-the-state-machine">Using the State Machine</a></h2>
+<p>To use the state machine, we'll want to modify our <code>crates/phantom_app/src/app.rs</code>.</p>
+<p>We should now create a state_machine and pass it to our <code>run_loop</code> function.</p>
+<pre><code class="language-rust noplaypen">
+pub fn run(initial_state: impl State + 'static, ...) {
+    ...
+    let mut state_machine = StateMachine::new(initial_state);
+    ...
+    event_loop.run(move |event, _, control_flow| {
+        ...
+        if let Err(error) = run_loop(&amp;mut state_machine, &amp;event, control_flow, resources) {
+            ...
+        }
+    });
+}
+
+fn run_loop(
+    state_machine: &amp;mut StateMachine,
+    ...,
+) {
+    ...
+}
+</code></pre>
+<p>This allows us to use the <code>state_machine</code> in our event handlers!</p>
+<pre><code class="language-rust noplaypen">
+fn run_loop(
+    ...
+) -&gt; Result&lt;()&gt; {
+    if !state_machine.is_running() {
+        state_machine.start(&amp;mut resources)?;
+    }
+
+    state_machine.handle_event(&amp;mut resources, event)?;
+
+    match event {
+        Event::MainEventsCleared =&gt; {
+            state_machine.update(&amp;mut resources)?;
+        }
+
+        Event::WindowEvent {
+            ref event,
+            window_id,
+        } if *window_id == resources.window.id() =&gt; match event {
+            WindowEvent::CloseRequested =&gt; *control_flow = ControlFlow::Exit,
+
+            WindowEvent::KeyboardInput { input, .. } =&gt; {
+                ...
+                state_machine.on_key(&amp;mut resources, *input)?;
+            }
+
+            WindowEvent::MouseInput { button, state, .. } =&gt; {
+                state_machine.on_mouse(&amp;mut resources, button, state)?;
+            }
+
+            WindowEvent::DroppedFile(ref path) =&gt; {
+                state_machine.on_file_dropped(&amp;mut resources, path)?;
+            }
+
+            _ =&gt; {}
+        },
+        _ =&gt; {}
+    }
+    Ok(())
+}
+
+
+</code></pre>
 
                     </main>
 
