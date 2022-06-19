@@ -38,7 +38,7 @@ impl State for Editor {
     fn on_file_dropped(
         &mut self,
         _resources: &mut Resources,
-        path: &std::path::PathBuf,
+        path: &std::path::Path,
     ) -> Result<Transition> {
         log::info!(
             "File dropped: {}",

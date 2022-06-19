@@ -3,7 +3,7 @@ use phantom_dependencies::{
     anyhow::{Context, Result},
     winit::event::{ElementState, Event, KeyboardInput, MouseButton},
 };
-use std::path::PathBuf;
+use std::path::Path;
 
 pub struct EmptyState {}
 impl State for EmptyState {}
@@ -29,11 +29,7 @@ pub trait State {
         Ok(Transition::None)
     }
 
-    fn on_file_dropped(
-        &mut self,
-        _resources: &mut Resources,
-        _path: &PathBuf,
-    ) -> Result<Transition> {
+    fn on_file_dropped(&mut self, _resources: &mut Resources, _path: &Path) -> Result<Transition> {
         Ok(Transition::None)
     }
 
@@ -92,7 +88,7 @@ impl StateMachine {
         if !self.running {
             return Ok(());
         }
-        let transition = self.active_state_mut()?.on_event(resources, &event)?;
+        let transition = self.active_state_mut()?.on_event(resources, event)?;
         self.transition(transition, resources)
     }
 
@@ -104,7 +100,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &PathBuf) -> Result<()> {
+    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &Path) -> Result<()> {
         if !self.running {
             return Ok(());
         }
