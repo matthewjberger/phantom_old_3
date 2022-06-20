@@ -7,6 +7,9 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
+      - name: Install libudev-dev
+        run: sudo apt-get install -y libudev-dev
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -26,6 +29,9 @@ jobs:
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
+      - name: Install libudev-dev
+        run: sudo apt-get install -y libudev-dev
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -45,6 +51,9 @@ jobs:
     name: Lints
     runs-on: ubuntu-latest
     steps:
+      - name: Install libudev-dev
+        run: sudo apt-get install -y libudev-dev
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
