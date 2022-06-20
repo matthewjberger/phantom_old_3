@@ -9,6 +9,10 @@ pub struct EmptyState {}
 impl State for EmptyState {}
 
 pub trait State {
+    fn label(&self) -> String {
+        "Unlabeled Game State".to_string()
+    }
+
     fn on_start(&mut self, _resources: &mut Resources) -> Result<()> {
         Ok(())
     }
@@ -70,6 +74,13 @@ impl StateMachine {
             running: false,
             states: vec![Box::new(initial_state)],
         }
+    }
+
+    pub fn active_state_label(&self) -> Option<String> {
+        if !self.running {
+            return None;
+        }
+        self.states.last().map(|state| state.label())
     }
 
     pub fn is_running(&self) -> bool {

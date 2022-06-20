@@ -11,6 +11,10 @@ use phantom::{
 pub struct Editor;
 
 impl State for Editor {
+    fn label(&self) -> String {
+        "Phantom Editor - Main".to_string()
+    }
+
     fn on_start(&mut self, _resources: &mut Resources) -> Result<()> {
         log::info!("Starting the Phantom editor");
         Ok(())
