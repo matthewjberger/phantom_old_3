@@ -1,6 +1,8 @@
 use crate::{Input, Resources, State, StateMachine, System};
 use phantom_dependencies::{
-    anyhow, env_logger,
+    anyhow::{self, anyhow},
+    env_logger,
+    gilrs::Gilrs,
     image::{self, io::Reader},
     log,
     thiserror::Error,
@@ -78,12 +80,15 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     let physical_size = window.inner_size();
     let window_dimensions = [physical_size.width, physical_size.height];
 
+    let mut gilrs = Gilrs::new().map_err(|_err| anyhow!("Failed to setup gamepad library!"))?;
+
     let mut input = Input::default();
     let mut system = System::new(window_dimensions);
 
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
             window: &mut window,
+            gilrs: &mut gilrs,
             input: &mut input,
             system: &mut system,
         };
@@ -104,6 +109,10 @@ fn run_loop(
     }
 
     state_machine.handle_event(&mut resources, event)?;
+
+    if let Some(event) = resources.gilrs.next_event() {
+        state_machine.on_gamepad_event(&mut resources, event)?;
+    }
 
     match event {
         Event::MainEventsCleared => {

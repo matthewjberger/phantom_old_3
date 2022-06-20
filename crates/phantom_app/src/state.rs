@@ -1,6 +1,7 @@
 use crate::Resources;
 use phantom_dependencies::{
     anyhow::{Context, Result},
+    gilrs::Event as GilrsEvent,
     winit::event::{ElementState, Event, KeyboardInput, MouseButton},
 };
 use std::path::Path;
@@ -30,6 +31,14 @@ pub trait State {
     }
 
     fn update(&mut self, _resources: &mut Resources) -> Result<Transition> {
+        Ok(Transition::None)
+    }
+
+    fn on_gamepad_event(
+        &mut self,
+        _resources: &mut Resources,
+        _event: GilrsEvent,
+    ) -> Result<Transition> {
         Ok(Transition::None)
     }
 
@@ -108,6 +117,16 @@ impl StateMachine {
             return Ok(());
         }
         let transition = self.active_state_mut()?.update(resources)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_gamepad_event(&mut self, resources: &mut Resources, event: GilrsEvent) -> Result<()> {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self
+            .active_state_mut()?
+            .on_gamepad_event(resources, event)?;
         self.transition(transition, resources)
     }
 

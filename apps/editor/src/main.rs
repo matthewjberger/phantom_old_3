@@ -1,7 +1,8 @@
 use phantom::{
     app::{run, AppConfig, Resources, State, Transition},
     dependencies::{
-        anyhow::Result,
+        anyhow::{Context, Result},
+        gilrs::Event as GilrsEvent,
         log,
         winit::event::{ElementState, Event, KeyboardInput, MouseButton},
     },
@@ -39,6 +40,16 @@ impl State for Editor {
         Ok(Transition::None)
     }
 
+    fn on_gamepad_event(
+        &mut self,
+        _resources: &mut Resources,
+        event: GilrsEvent,
+    ) -> Result<Transition> {
+        let GilrsEvent { id, time, event } = event;
+        log::trace!("{:?} New gamepad event from {}: {:?}", time, id, event);
+        Ok(Transition::None)
+    }
+
     fn on_file_dropped(
         &mut self,
         _resources: &mut Resources,
@@ -46,7 +57,9 @@ impl State for Editor {
     ) -> Result<Transition> {
         log::info!(
             "File dropped: {}",
-            path.as_os_str().to_str().expect("Failed to convert path!")
+            path.as_os_str()
+                .to_str()
+                .context("Failed to convert path!")?
         );
         Ok(Transition::None)
     }
@@ -57,7 +70,7 @@ impl State for Editor {
         button: &MouseButton,
         button_state: &ElementState,
     ) -> Result<Transition> {
-        log::trace!("Mouse event: {:#?} {:#?}", button, button_state,);
+        log::trace!("Mouse event: {:#?} {:#?}", button, button_state);
         Ok(Transition::None)
     }
 
@@ -66,8 +79,7 @@ impl State for Editor {
         Ok(Transition::None)
     }
 
-    fn on_event(&mut self, _resources: &mut Resources, event: &Event<()>) -> Result<Transition> {
-        log::trace!("Event received: {:#?}", event);
+    fn on_event(&mut self, _resources: &mut Resources, _event: &Event<()>) -> Result<Transition> {
         Ok(Transition::None)
     }
 }
