@@ -8,6 +8,8 @@
   * [Adding Dependencies](adding-dependencies.md)
   * [Creating an Application](creating-an-application.md)
   * [Game States](game-states.md)
+  * [Tracking Input](tracking-input.md)
+  * [Gamepads](gamepads.md)
 
 * [Appendix](appendix.md)
   * [A - Further Reading](appendix-further-reading.md)
