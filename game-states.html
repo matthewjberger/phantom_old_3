@@ -155,6 +155,10 @@ use phantom_dependencies::{
 use std::path::PathBuf;
 
 pub trait State {
+    fn label(&amp;self) -&gt; String {
+        &quot;Unlabeled Game State&quot;.to_string()
+    }
+
     fn on_start(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
         Ok(())
     }
@@ -227,6 +231,16 @@ impl StateMachine {
         Self {
             running: false,
             states: vec![Box::new(initial_state)],
+        }
+    }
+
+    pub fn active_state_label(&amp;self) -&gt; Option&lt;String&gt; {
+        if !self.running {
+            return None;
+        }
+        match self.states.last() {
+            Some(state) =&gt; Some(state.label()),
+            None =&gt; None,
         }
     }
 
