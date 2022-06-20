@@ -1,4 +1,4 @@
-use crate::{Resources, State, StateMachine};
+use crate::{Input, Resources, State, StateMachine, System};
 use phantom_dependencies::{
     anyhow, env_logger,
     image::{self, io::Reader},
@@ -75,9 +75,17 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
 
     let mut state_machine = StateMachine::new(initial_state);
 
+    let physical_size = window.inner_size();
+    let window_dimensions = [physical_size.width, physical_size.height];
+
+    let mut input = Input::default();
+    let mut system = System::new(window_dimensions);
+
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
             window: &mut window,
+            input: &mut input,
+            system: &mut system,
         };
         if let Err(error) = run_loop(&mut state_machine, &event, control_flow, resources) {
             log::error!("Application error: {}", error);

@@ -1,7 +1,14 @@
+mod input;
+mod system;
+
+pub use self::{input::*, system::*};
+
 use phantom_dependencies::winit::window::Window;
 
 pub struct Resources<'a> {
     pub window: &'a mut Window,
+    pub input: &'a mut Input,
+    pub system: &'a mut System,
 }
 
 impl<'a> Resources<'a> {
