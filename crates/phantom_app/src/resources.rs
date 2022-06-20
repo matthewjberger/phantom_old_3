@@ -3,10 +3,11 @@ mod system;
 
 pub use self::{input::*, system::*};
 
-use phantom_dependencies::winit::window::Window;
+use phantom_dependencies::{gilrs::Gilrs, winit::window::Window};
 
 pub struct Resources<'a> {
     pub window: &'a mut Window,
+    pub gilrs: &'a mut Gilrs,
     pub input: &'a mut Input,
     pub system: &'a mut System,
 }
