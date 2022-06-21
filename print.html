@@ -891,6 +891,259 @@ fn run_loop(
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tracking-input"><a class="header" href="#tracking-input">Tracking Input</a></h1>
+<p>Using the events we receive from Winit, we have a way of responding to events as they happen,
+but we don't necessarily know the state of a given key, the mouse, the window, etc. What we want is
+for that information to be tracked and made available to gamestates, so they can make
+informed decisions using up-to-date information.</p>
+<h2 id="necessary-dependencies"><a class="header" href="#necessary-dependencies">Necessary Dependencies</a></h2>
+<p>First, let's add a math library to simplify some of the calculations.</p>
+<blockquote>
+<p>This will be heavily used when we design our world crate.</p>
+</blockquote>
+<pre><code class="language-bash">cargo add anyhow -p nalgebra_glm
+</code></pre>
+<p>and export it in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
+<pre><code class="language-bash">..
+pub use nalgebra_glm as glm;
+...
+</code></pre>
+<h2 id="adding-an-input-resource"><a class="header" href="#adding-an-input-resource">Adding an Input Resource</a></h2>
+<p>Let's add a file at <code>crates/phantom_app/src/resources/input.rs</code>.</p>
+<pre><code class="language-rust noplaypen">use phantom_dependencies::{
+    glm,
+    winit::{
+        dpi::PhysicalPosition,
+        event::{
+            ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
+            WindowEvent,
+        },
+    },
+};
+use std::collections::HashMap;
+
+pub type KeyMap = HashMap&lt;VirtualKeyCode, ElementState&gt;;
+
+pub struct Input {
+    pub keystates: KeyMap,
+    pub mouse: Mouse,
+    pub allowed: bool,
+}
+
+impl Default for Input {
+    fn default() -&gt; Self {
+        Self {
+            keystates: KeyMap::default(),
+            mouse: Mouse::default(),
+            allowed: true,
+        }
+    }
+}
+
+impl Input {
+    pub fn is_key_pressed(&amp;self, keycode: VirtualKeyCode) -&gt; bool {
+        self.keystates.contains_key(&amp;keycode) &amp;&amp; self.keystates[&amp;keycode] == ElementState::Pressed
+    }
+
+    pub fn handle_event&lt;T&gt;(&amp;mut self, event: &amp;Event&lt;T&gt;, window_center: glm::Vec2) {
+        if !self.allowed {
+            return;
+        }
+
+        if let Event::WindowEvent {
+            event:
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            virtual_keycode: Some(keycode),
+                            state,
+                            ..
+                        },
+                    ..
+                },
+            ..
+        } = *event
+        {
+            *self.keystates.entry(keycode).or_insert(state) = state;
+        }
+
+        self.mouse.handle_event(event, window_center);
+    }
+}
+
+#[derive(Default)]
+pub struct Mouse {
+    pub is_left_clicked: bool,
+    pub is_right_clicked: bool,
+    pub position: glm::Vec2,
+    pub position_delta: glm::Vec2,
+    pub offset_from_center: glm::Vec2,
+    pub wheel_delta: glm::Vec2,
+    pub moved: bool,
+    pub scrolled: bool,
+}
+
+impl Mouse {
+    pub fn handle_event&lt;T&gt;(&amp;mut self, event: &amp;Event&lt;T&gt;, window_center: glm::Vec2) {
+        match event {
+            Event::NewEvents { .. } =&gt; self.new_events(),
+            Event::WindowEvent { event, .. } =&gt; match *event {
+                WindowEvent::MouseInput { button, state, .. } =&gt; self.mouse_input(button, state),
+                WindowEvent::CursorMoved { position, .. } =&gt; {
+                    self.cursor_moved(position, window_center)
+                }
+                WindowEvent::MouseWheel {
+                    delta: MouseScrollDelta::LineDelta(h_lines, v_lines),
+                    ..
+                } =&gt; self.mouse_wheel(h_lines, v_lines),
+                _ =&gt; {}
+            },
+            _ =&gt; {}
+        }
+    }
+
+    fn new_events(&amp;mut self) {
+        if !self.scrolled {
+            self.wheel_delta = glm::vec2(0.0, 0.0);
+        }
+        self.scrolled = false;
+
+        if !self.moved {
+            self.position_delta = glm::vec2(0.0, 0.0);
+        }
+        self.moved = false;
+    }
+
+    fn cursor_moved(&amp;mut self, position: PhysicalPosition&lt;f64&gt;, window_center: glm::Vec2) {
+        let last_position = self.position;
+        let current_position = glm::vec2(position.x as _, position.y as _);
+        self.position = current_position;
+        self.position_delta = current_position - last_position;
+        self.offset_from_center = window_center - glm::vec2(position.x as _, position.y as _);
+        self.moved = true;
+    }
+
+    fn mouse_wheel(&amp;mut self, h_lines: f32, v_lines: f32) {
+        self.wheel_delta = glm::vec2(h_lines, v_lines);
+        self.scrolled = true;
+    }
+
+    fn mouse_input(&amp;mut self, button: MouseButton, state: ElementState) {
+        let clicked = state == ElementState::Pressed;
+        match button {
+            MouseButton::Left =&gt; self.is_left_clicked = clicked,
+            MouseButton::Right =&gt; self.is_right_clicked = clicked,
+            _ =&gt; {}
+        }
+    }
+}
+</code></pre>
+<p>This lets us easily track keystates and mouse information!</p>
+<h2 id="adding-a-system-resource"><a class="header" href="#adding-a-system-resource">Adding a System Resource</a></h2>
+<p>Let's add a file at <code>crates/phantom_app/src/resources/system.rs</code>.</p>
+<pre><code class="language-rust noplaypen">use phantom_dependencies::{
+    glm,
+    winit::{
+        dpi::PhysicalSize,
+        event::{Event, WindowEvent},
+    },
+};
+use std::{cmp, time::Instant};
+
+pub struct System {
+    pub window_dimensions: [u32; 2],
+    pub delta_time: f64,
+    pub last_frame: Instant,
+    pub exit_requested: bool,
+}
+
+impl System {
+    pub fn new(window_dimensions: [u32; 2]) -&gt; Self {
+        Self {
+            last_frame: Instant::now(),
+            window_dimensions,
+            delta_time: 0.01,
+            exit_requested: false,
+        }
+    }
+
+    pub fn aspect_ratio(&amp;self) -&gt; f32 {
+        let width = self.window_dimensions[0];
+        let height = cmp::max(self.window_dimensions[1], 0);
+        width as f32 / height as f32
+    }
+
+    pub fn window_center(&amp;self) -&gt; glm::Vec2 {
+        glm::vec2(
+            self.window_dimensions[0] as f32 / 2.0,
+            self.window_dimensions[1] as f32 / 2.0,
+        )
+    }
+
+    pub fn handle_event&lt;T&gt;(&amp;mut self, event: &amp;Event&lt;T&gt;) {
+        match event {
+            Event::NewEvents { .. } =&gt; {
+                self.delta_time = (Instant::now().duration_since(self.last_frame).as_micros()
+                    as f64)
+                    / 1_000_000_f64;
+                self.last_frame = Instant::now();
+            }
+            Event::WindowEvent { event, .. } =&gt; match *event {
+                WindowEvent::CloseRequested =&gt; self.exit_requested = true,
+                WindowEvent::Resized(PhysicalSize { width, height }) =&gt; {
+                    self.window_dimensions = [width, height];
+                }
+                _ =&gt; {}
+            },
+            _ =&gt; {}
+        }
+    }
+}
+
+</code></pre>
+<p>Now, we won't have to pollute our main game loop just to keep track of window dimensions and frame latency.</p>
+<h2 id="adding-resources"><a class="header" href="#adding-resources">Adding Resources</a></h2>
+<p>Now, we can modify our <code>crates/phantom_app/src/resources.rs</code> to include our new resources.</p>
+<pre><code class="language-rust noplaypen">mod input;
+mod system;
+
+pub use self::{input::*, system::*};
+
+use phantom_dependencies::winit::window::Window;
+
+pub struct Resources&lt;'a&gt; {
+    pub window: &amp;'a mut Window,
+    pub input: &amp;'a mut Input,
+    pub system: &amp;'a mut System,
+}
+
+...
+</code></pre>
+<h2 id="instantiating-resources"><a class="header" href="#instantiating-resources">Instantiating Resources</a></h2>
+<p>Finally, we can instantiate our resources in our <code>crates/phantom_app/src/app.rs</code>.</p>
+<pre><code class="language-rust noplaypen">use crate::{Input, Resources, State, StateMachine, System};
+
+pub fn run(...) {
+    ...
+
+    let physical_size = window.inner_size();
+    let window_dimensions = [physical_size.width, physical_size.height];
+
+    let mut input = Input::default();
+    let mut system = System::new(window_dimensions);
+
+    ...
+
+    event_loop.run(move |event, _, control_flow| {
+       let resources = Resources {
+            ...
+            input: &amp;mut input,
+            system: &amp;mut system,
+        };  
+        ...
+    })
+}
+...
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="gamepads"><a class="header" href="#gamepads">Gamepads</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="a---further-reading"><a class="header" href="#a---further-reading">A - Further Reading</a></h1>
