@@ -142,13 +142,12 @@ informed decisions using up-to-date information.</p>
 <h2 id="necessary-dependencies"><a class="header" href="#necessary-dependencies">Necessary Dependencies</a></h2>
 <p>First, let's add a math library to simplify some of the calculations.</p>
 <blockquote>
-<p>This will be heavily used when we design our world crate.</p>
+<p>This will be heavily used when we design our world crate!</p>
 </blockquote>
 <pre><code class="language-bash">cargo add anyhow -p nalgebra_glm
 </code></pre>
-<p>and export it in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
-<pre><code class="language-bash">...
-pub use nalgebra_glm as glm;
+<p>Then, export it in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
+<pre><code class="language-bash">pub use nalgebra_glm as glm;
 </code></pre>
 <h2 id="adding-an-input-resource"><a class="header" href="#adding-an-input-resource">Adding an Input Resource</a></h2>
 <p>Let's add a file at <code>crates/phantom_app/src/resources/input.rs</code>.</p>

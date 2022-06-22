@@ -446,6 +446,96 @@ fn run_loop(
     Ok(())
 }
 </code></pre>
+<h2 id="setting-up-the-editor"><a class="header" href="#setting-up-the-editor">Setting up the Editor</a></h2>
+<p>With gamestates in place, we can refactor our <code>apps/editor/src/main.rs</code> to the following.</p>
+<pre><code class="language-rust noplaypen">use phantom::{
+    app::{run, AppConfig, Resources, State, Transition},
+    dependencies::{
+        anyhow::{Context, Result},
+        egui::{global_dark_light_mode_switch, menu, SidePanel, TopBottomPanel},
+        gilrs::Event as GilrsEvent,
+        log,
+        winit::event::{ElementState, Event, KeyboardInput, MouseButton},
+    },
+};
+
+#[derive(Default)]
+pub struct Editor;
+
+impl State for Editor {
+    fn label(&amp;self) -&gt; String {
+        &quot;Phantom Editor - Main&quot;.to_string()
+    }
+
+    fn on_start(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
+        log::info!(&quot;Starting the Phantom editor&quot;);
+        Ok(())
+    }
+
+    fn on_stop(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
+        log::info!(&quot;Stopping the Phantom editor&quot;);
+        Ok(())
+    }
+
+    fn on_pause(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
+        log::info!(&quot;Editor paused&quot;);
+        Ok(())
+    }
+
+    fn on_resume(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;()&gt; {
+        log::info!(&quot;Editor unpaused&quot;);
+        Ok(())
+    }
+
+    fn update(&amp;mut self, _resources: &amp;mut Resources) -&gt; Result&lt;Transition&gt; {
+        Ok(Transition::None)
+    }
+
+    fn on_file_dropped(
+        &amp;mut self,
+        _resources: &amp;mut Resources,
+        path: &amp;std::path::Path,
+    ) -&gt; Result&lt;Transition&gt; {
+        log::info!(
+            &quot;File dropped: {}&quot;,
+            path.as_os_str()
+                .to_str()
+                .context(&quot;Failed to convert path!&quot;)?
+        );
+        Ok(Transition::None)
+    }
+
+    fn on_mouse(
+        &amp;mut self,
+        _resources: &amp;mut Resources,
+        button: &amp;MouseButton,
+        button_state: &amp;ElementState,
+    ) -&gt; Result&lt;Transition&gt; {
+        log::trace!(&quot;Mouse event: {:#?} {:#?}&quot;, button, button_state);
+        Ok(Transition::None)
+    }
+
+    fn on_key(&amp;mut self, _resources: &amp;mut Resources, input: KeyboardInput) -&gt; Result&lt;Transition&gt; {
+        log::trace!(&quot;Key event received: {:#?}&quot;, input);
+        Ok(Transition::None)
+    }
+
+    fn on_event(&amp;mut self, _resources: &amp;mut Resources, _event: &amp;Event&lt;()&gt;) -&gt; Result&lt;Transition&gt; {
+        Ok(Transition::None)
+    }
+}
+
+fn main() -&gt; Result&lt;()&gt; {
+    Ok(run(
+        Editor::default(),
+        AppConfig {
+            icon: Some(&quot;assets/icons/phantom.png&quot;.to_string()),
+            ..Default::default()
+        },
+    )?)
+}
+
+</code></pre>
 
                     </main>
 

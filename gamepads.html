@@ -135,6 +135,127 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="gamepads"><a class="header" href="#gamepads">Gamepads</a></h1>
+<p>To handle gamepads, we will use the <a href="https://gitlab.com/gilrs-project/gilrs">gilrs</a> library. This library abstracts platform specific APIs to provide unified interfaces for working with gamepads and supports a wide variety of controllers.</p>
+<p>To integrate this library, let's first add <code>gilrs</code> as a dependency.</p>
+<pre><code class="language-bash">cargo add gilrs -p nalgebra_glm
+</code></pre>
+<p>Then, export it in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
+<pre><code class="language-bash">pub use gilrs as glm;
+</code></pre>
+<p>Let's extend this gamepad support to our game states by adding it to our <code>Resources</code> bundle in <code>crates/phantom_app/src/resources.rs</code>.</p>
+<pre><code class="language-rust noplaypen">...
+
+use phantom_dependencies::{
+    gilrs::Gilrs,
+    ...
+};
+
+pub struct Resources&lt;'a&gt; {
+    ...
+    pub gilrs: &amp;'a mut Gilrs,
+}
+</code></pre>
+<p>Next, we'll have to add an instance of <code>Gilrs</code> to the <code>Resources</code> that we declare in the application boilerplate in <code>crates/phantom_app/src/app.rs</code>.</p>
+<pre><code class="language-rust noplaypen">...
+
+use phantom_dependencies::{
+    anyhow::{self, anyhow},
+    env_logger,
+    gilrs::Gilrs,
+    ...
+}
+
+...
+
+pub fn run(...) {
+    ...
+
+    let mut gilrs = Gilrs::new().map_err(|_err| anyhow!(&quot;Failed to setup gamepad library!&quot;))?;
+
+    ...
+
+    event_loop.run(move |event, _, control_flow| {
+       let resources = Resources {
+            ...
+            gilrs: &amp;mut gilrs,
+        };  
+        ...
+    })
+}
+
+pub fn run_loop(...) {
+    ...
+
+    if let Some(event) = resources.gilrs.next_event() {
+        state_machine.on_gamepad_event(&amp;mut resources, event)?;
+    }
+
+    ...
+
+}
+...
+</code></pre>
+<p>At this point, you'll notice that we haven't implemented anything in our state machine to handle gamepad events. Let's add a method to our <code>State</code> trait in <code>crates/phantom_app/src/state.rs</code>!</p>
+<pre><code class="language-rust noplaypen">...
+use phantom_dependencies::{
+    ...
+    gilrs::Event as GilrsEvent,
+};
+...
+
+trait State {
+    ...
+
+    fn on_gamepad_event(
+        &amp;mut self,
+        _resources: &amp;mut Resources,
+        _event: GilrsEvent,
+    ) -&gt; Result&lt;Transition&gt; {
+        Ok(Transition::None)
+    }
+}
+</code></pre>
+<p>With this declared, we can now command our state machine to forward gamepad events to the game states.</p>
+<p>Add the following method to our <code>StateMachine</code> in <code>crates/phantom_app/src/state.rs</code>.</p>
+<pre><code class="language-rust noplaypen">pub fn on_gamepad_event(&amp;mut self, resources: &amp;mut Resources, event: GilrsEvent) -&gt; Result&lt;()&gt; {
+    if !self.running {
+        return Ok(());
+    }
+    let transition = self
+        .active_state_mut()?
+        .on_gamepad_event(resources, event)?;
+    self.transition(transition, resources)
+}
+</code></pre>
+<p>Let's make use of this new event handler by adding the following code to our editor at <code>apps/editor/src/main.rs</code>.</p>
+<pre><code class="language-rust noplaypen">use phantom::{
+    ...
+    dependencies::{
+        anyhow::{Context, Result},
+        gilrs::Event as GilrsEvent,
+        ...
+    },
+};
+
+...
+
+impl State for Editor {
+    ...
+    fn on_gamepad_event(
+        &amp;mut self,
+        _resources: &amp;mut Resources,
+        event: GilrsEvent,
+    ) -&gt; Result&lt;Transition&gt; {
+        let GilrsEvent { id, time, event } = event;
+        log::trace!(&quot;{:?} New gamepad event from {}: {:?}&quot;, time, id, event);
+        Ok(Transition::None)
+    }
+}
+</code></pre>
+<p>Now, with a controller hooked up you'll be able to interact with your application!</p>
+<blockquote>
+<p>Set $env:RUST_LOG=&quot;debug&quot; on windows or RUST_LOG=&quot;debug&quot; on mac/linux to view the logs</p>
+</blockquote>
 
                     </main>
 
