@@ -4,5 +4,8 @@ pub use gilrs;
 pub use image;
 pub use log;
 pub use nalgebra_glm as glm;
+pub use pollster;
+pub use raw_window_handle;
 pub use thiserror;
+pub use wgpu;
 pub use winit;
