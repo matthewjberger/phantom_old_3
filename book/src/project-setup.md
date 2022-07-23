@@ -28,6 +28,7 @@ cargo new --vcs none apps/viewer
 
 # Libraries
 cargo new --lib crates/phantom_app
+cargo new --lib crates/phantom_audio
 cargo new --lib crates/phantom_dependencies
 cargo new --lib crates/phantom_gui
 cargo new --lib crates/phantom_render
@@ -133,6 +134,7 @@ members = ["apps/*", "crates/*"]
 
 [dependencies]
 phantom_app = { path = "crates/phantom_app" }
+phantom_audio = { path = "crates/phantom_audio" }
 phantom_dependencies = { path = "crates/phantom_dependencies" }
 phantom_gui = { path = "crates/phantom_gui" }
 phantom_render = { path = "crates/phantom_render" }
@@ -144,6 +146,10 @@ Next, the `src/lib.rs` should look like this:
 ```rust,noplaypen
 pub mod app {
     pub use phantom_app::*;
+}
+
+pub mod audio {
+    pub use phantom_audio::*;
 }
 
 pub mod dependencies {
@@ -176,6 +182,7 @@ ensure the same version of any given dependency is used across all of our module
 For the following apps:
 
 * `phantom_app`
+* `phantom_audio`
 * `phantom_gui`
 * `phantom_render`
 * `phantom_world`
