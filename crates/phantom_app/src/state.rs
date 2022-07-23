@@ -1,10 +1,22 @@
 use crate::Resources;
 use phantom_dependencies::{
-    anyhow::{Context, Result},
     gilrs::Event as GilrsEvent,
-    winit::event::{ElementState, Event, KeyboardInput, MouseButton},
+    thiserror::Error,
+    winit::{
+        dpi::PhysicalSize,
+        event::{ElementState, Event, KeyboardInput, MouseButton},
+    },
 };
 use std::path::Path;
+
+#[derive(Error, Debug)]
+pub enum StateMachineError {
+    #[error("Failed to get the current surface texture!")]
+    NoStatesPresent,
+}
+
+type Result<T, E = StateMachineError> = std::result::Result<T, E>;
+pub type StateResult<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
 pub struct EmptyState {}
 impl State for EmptyState {}
@@ -14,23 +26,23 @@ pub trait State {
         "Unlabeled Game State".to_string()
     }
 
-    fn on_start(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_start(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_stop(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_pause(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_pause(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_stop(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_resume(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_resume(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn update(&mut self, _resources: &mut Resources) -> Result<Transition> {
+    fn update(&mut self, _resources: &mut Resources) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
@@ -38,11 +50,23 @@ pub trait State {
         &mut self,
         _resources: &mut Resources,
         _event: GilrsEvent,
-    ) -> Result<Transition> {
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn on_file_dropped(&mut self, _resources: &mut Resources, _path: &Path) -> Result<Transition> {
+    fn on_file_dropped(
+        &mut self,
+        _resources: &mut Resources,
+        _path: &Path,
+    ) -> StateResult<Transition> {
+        Ok(Transition::None)
+    }
+
+    fn on_resize(
+        &mut self,
+        _resources: &mut Resources,
+        _physical_size: &PhysicalSize<u32>,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
@@ -51,15 +75,23 @@ pub trait State {
         _resources: &mut Resources,
         _button: &MouseButton,
         _button_state: &ElementState,
-    ) -> Result<Transition> {
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn on_key(&mut self, _resources: &mut Resources, _input: KeyboardInput) -> Result<Transition> {
+    fn on_key(
+        &mut self,
+        _resources: &mut Resources,
+        _input: KeyboardInput,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn on_event(&mut self, _resources: &mut Resources, _event: &Event<()>) -> Result<Transition> {
+    fn on_event(
+        &mut self,
+        _resources: &mut Resources,
+        _event: &Event<()>,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 }
@@ -96,7 +128,7 @@ impl StateMachine {
         self.running
     }
 
-    pub fn start(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn start(&mut self, resources: &mut Resources) -> StateResult<()> {
         if self.running {
             return Ok(());
         }
@@ -104,7 +136,11 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    pub fn handle_event(&mut self, resources: &mut Resources, event: &Event<()>) -> Result<()> {
+    pub fn handle_event(
+        &mut self,
+        resources: &mut Resources,
+        event: &Event<()>,
+    ) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -112,7 +148,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn update(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn update(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -120,7 +156,11 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_gamepad_event(&mut self, resources: &mut Resources, event: GilrsEvent) -> Result<()> {
+    pub fn on_gamepad_event(
+        &mut self,
+        resources: &mut Resources,
+        event: GilrsEvent,
+    ) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -130,11 +170,25 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &Path) -> Result<()> {
+    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &Path) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
         let transition = self.active_state_mut()?.on_file_dropped(resources, path)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_resize(
+        &mut self,
+        resources: &mut Resources,
+        physical_size: &PhysicalSize<u32>,
+    ) -> StateResult<()> {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self
+            .active_state_mut()?
+            .on_resize(resources, physical_size)?;
         self.transition(transition, resources)
     }
 
@@ -143,7 +197,7 @@ impl StateMachine {
         resources: &mut Resources,
         button: &MouseButton,
         button_state: &ElementState,
-    ) -> Result<()> {
+    ) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -153,7 +207,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_key(&mut self, resources: &mut Resources, input: KeyboardInput) -> Result<()> {
+    pub fn on_key(&mut self, resources: &mut Resources, input: KeyboardInput) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -161,7 +215,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_event(&mut self, resources: &mut Resources, event: &Event<()>) -> Result<()> {
+    pub fn on_event(&mut self, resources: &mut Resources, event: &Event<()>) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -169,7 +223,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    fn transition(&mut self, request: Transition, resources: &mut Resources) -> Result<()> {
+    fn transition(&mut self, request: Transition, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -185,10 +239,10 @@ impl StateMachine {
     fn active_state_mut(&mut self) -> Result<&mut Box<(dyn State + 'static)>> {
         self.states
             .last_mut()
-            .context("Tried to access state in state machine with no states present!")
+            .ok_or(StateMachineError::NoStatesPresent)
     }
 
-    fn switch(&mut self, state: Box<dyn State>, resources: &mut Resources) -> Result<()> {
+    fn switch(&mut self, state: Box<dyn State>, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -199,7 +253,7 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    fn push(&mut self, state: Box<dyn State>, resources: &mut Resources) -> Result<()> {
+    fn push(&mut self, state: Box<dyn State>, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -210,7 +264,7 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    fn pop(&mut self, resources: &mut Resources) -> Result<()> {
+    fn pop(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -227,7 +281,7 @@ impl StateMachine {
         }
     }
 
-    pub fn stop(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn stop(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
