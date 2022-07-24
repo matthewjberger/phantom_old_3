@@ -165,12 +165,23 @@ use phantom_dependencies::{
     ...
 }
 
+
+#[derive(Error, Debug)]
+pub enum ApplicationError {
+    ...
+
+    #[error(&quot;Failed to initialize the gamepad input library!&quot;)]
+    InitializeGamepadLibrary(#[source] gilrs::Error),
+
+    ...
+}
+
 ...
 
 pub fn run(...) {
     ...
 
-    let mut gilrs = Gilrs::new().map_err(|_err| anyhow!(&quot;Failed to setup gamepad library!&quot;))?;
+    let mut gilrs = Gilrs::new().map_err(ApplicationError::InitializeGamepadLibrary)?;
 
     ...
 
@@ -187,7 +198,9 @@ pub fn run_loop(...) {
     ...
 
     if let Some(event) = resources.gilrs.next_event() {
-        state_machine.on_gamepad_event(&amp;mut resources, event)?;
+        state_machine
+            .on_gamepad_event(&amp;mut resources, event)
+            .map_err(ApplicationError::HandleEvent)?;
     }
 
     ...
@@ -217,7 +230,7 @@ trait State {
 </code></pre>
 <p>With this declared, we can now command our state machine to forward gamepad events to the game states.</p>
 <p>Add the following method to our <code>StateMachine</code> in <code>crates/phantom_app/src/state.rs</code>.</p>
-<pre><code class="language-rust noplaypen">pub fn on_gamepad_event(&amp;mut self, resources: &amp;mut Resources, event: GilrsEvent) -&gt; Result&lt;()&gt; {
+<pre><code class="language-rust noplaypen">pub fn on_gamepad_event(&amp;mut self, resources: &amp;mut Resources, event: GilrsEvent) -&gt; StateResult&lt;()&gt; {
     if !self.running {
         return Ok(());
     }
@@ -253,9 +266,6 @@ impl State for Editor {
 }
 </code></pre>
 <p>Now, with a controller hooked up you'll be able to interact with your application!</p>
-<blockquote>
-<p>Set $env:RUST_LOG=&quot;debug&quot; on windows or RUST_LOG=&quot;debug&quot; on mac/linux to view the logs</p>
-</blockquote>
 
                     </main>
 

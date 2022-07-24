@@ -219,19 +219,10 @@ use phantom_dependencies::{
     },
 };
 
-
 #[derive(Error, Debug)]
 pub enum ApplicationError {
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    ImageError(#[from] image::ImageError),
-    #[error(transparent)]
-    BadIcon(#[from] winit::window::BadIcon),
-    #[error(transparent)]
-    OsError(#[from] winit::error::OsError),
-    #[error(&quot;Unknown application error&quot;)]
-    Unknown,
+    #[error(&quot;Failed to create a window!&quot;)]
+    CreateWindow(#[source] winit::error::OsError),
 }
 
 type Result&lt;T, E = ApplicationError&gt; = std::result::Result&lt;T, E&gt;;
@@ -249,7 +240,9 @@ pub fn run(config: AppConfig) -&gt; Result&lt;()&gt; {
 
     // TODO: Load the window icon
 
-    let mut window = window_builder.build(&amp;event_loop)?;
+    let mut window = window_builder
+        .build(&amp;event_loop)
+        .map_err(ApplicationError::CreateWindow)?;
 
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
@@ -292,11 +285,29 @@ fn run_loop(event: &amp;Event&lt;()&gt;, control_flow: &amp;mut ControlFlow, res
 <p>Then re-export it in <code>phantom_dependencies/lib.rs</code>.</p>
 <pre><code class="language-rust noplaypen">pub use image;
 </code></pre>
+<p>We can now add errors for our icon loading code:</p>
+<pre><code class="language-rust noplaypen">    #[error(&quot;Failed to create icon file!&quot;)]
+    CreateIcon(#[source] winit::window::BadIcon),
+
+    ...
+
+    #[error(&quot;Failed to decode icon file at path: {1}&quot;)]
+    DecodeIconFile(#[source] image::ImageError, String),
+
+    #[error(&quot;Failed to open icon file at path: {1}&quot;)]
+    OpenIconFile(#[source] io::Error, String),
+
+</code></pre>
 <p>Now we can replace our <code>TODO</code> with the following code!</p>
 <pre><code class="language-rust noplaypen">if let Some(icon_path) = config.icon.as_ref() {
-    let image = Reader::open(icon_path)?.decode()?.into_rgba8();
+    let image = Reader::open(icon_path)
+        .map_err(|error| ApplicationError::OpenIconFile(error, icon_path.to_string()))?
+        .decode()
+        .map_err(|error| ApplicationError::DecodeIconFile(error, icon_path.to_string()))?
+        .into_rgba8();
     let (width, height) = image.dimensions();
-    let icon = Icon::from_rgba(image.into_raw(), width, height)?;
+    let icon = Icon::from_rgba(image.into_raw(), width, height)
+        .map_err(ApplicationError::CreateIcon)?;
     window_builder = window_builder.with_window_icon(Some(icon));
 }
 </code></pre>
@@ -313,17 +324,20 @@ pub struct Editor;
 
 fn main() -&gt; Result&lt;()&gt; {
     Ok(run(AppConfig {
-        // icon: Some(&quot;assets/icon/phantom.png&quot;.to_string()),
+        icon: Some(&quot;assets/icon/phantom.png&quot;.to_string()),
         ..Default::default()
     })?)
 }
 </code></pre>
 <p>Run the application again with <code>cargo run -r --bin editor</code> and you should see a blank window with our phantom logo!</p>
+<h3 id="viewing-the-console-logs"><a class="header" href="#viewing-the-console-logs">Viewing the console logs</a></h3>
+<p>To view the console logs, set the <code>RUST_LOG</code> environment variable to <code>debug</code>.</p>
+<h4 id="maclinux"><a class="header" href="#maclinux">Mac/Linux:</a></h4>
 <blockquote>
-<p>To view the console logs, set the <code>RUST_LOG</code> environment variable to <code>debug</code></p>
-<p>Mac/Linux:</p>
 <p>RUST_LOG=&quot;debug&quot;</p>
-<p>Windows (powershell):</p>
+</blockquote>
+<h4 id="windows-powershell"><a class="header" href="#windows-powershell">Windows (powershell):</a></h4>
+<blockquote>
 <p>$env:RUST_LOG=&quot;debug&quot;</p>
 </blockquote>
 
