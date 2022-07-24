@@ -10,7 +10,11 @@
   * [Game States](game-states.md)
   * [Tracking Input](tracking-input.md)
   * [Gamepads](gamepads.md)
-  * [Rendering](rendering.md)
+
+* [Rendering](rendering.md)
+  * [Creating the Renderer](creating-the-renderer.md)
+  * [Using the Renderer](using-the-renderer.md)
+  * [Creating a GUI](creating-a-gui.md)
 
 * [Appendix](appendix.md)
   * [A - Further Reading](appendix-further-reading.md)
