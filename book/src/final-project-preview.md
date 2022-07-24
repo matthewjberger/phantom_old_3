@@ -12,4 +12,8 @@ The code in this chapter will serve as the project's foundation.
 
 ## Chapter 2
 
-TBD
+* Create a renderer
+* Setup a GUI
+* Render a basic scene
+
+![chapter-2](images/chapter2.png)
