@@ -5,7 +5,7 @@ To handle gamepads, we will use the [gilrs](https://gitlab.com/gilrs-project/gil
 To integrate this library, let's first add `gilrs` as a dependency.
 
 ```bash
-cargo add gilrs -p nalgebra_glm
+cargo add gilrs -p phantom_dependencies
 ```
 
 Then, export it in `crates/phantom_dependencies/src/lib.rs`:
