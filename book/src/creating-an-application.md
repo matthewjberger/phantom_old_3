@@ -118,19 +118,10 @@ use phantom_dependencies::{
     },
 };
 
-
 #[derive(Error, Debug)]
 pub enum ApplicationError {
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    ImageError(#[from] image::ImageError),
-    #[error(transparent)]
-    BadIcon(#[from] winit::window::BadIcon),
-    #[error(transparent)]
-    OsError(#[from] winit::error::OsError),
-    #[error("Unknown application error")]
-    Unknown,
+    #[error("Failed to create a window!")]
+    CreateWindow(#[source] winit::error::OsError),
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
@@ -148,7 +139,9 @@ pub fn run(config: AppConfig) -> Result<()> {
 
     // TODO: Load the window icon
 
-    let mut window = window_builder.build(&event_loop)?;
+    let mut window = window_builder
+        .build(&event_loop)
+        .map_err(ApplicationError::CreateWindow)?;
 
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
@@ -199,13 +192,34 @@ Then re-export it in `phantom_dependencies/lib.rs`.
 pub use image;
 ```
 
+We can now add errors for our icon loading code:
+
+```rust,noplaypen
+    #[error("Failed to create icon file!")]
+    CreateIcon(#[source] winit::window::BadIcon),
+
+    ...
+
+    #[error("Failed to decode icon file at path: {1}")]
+    DecodeIconFile(#[source] image::ImageError, String),
+
+    #[error("Failed to open icon file at path: {1}")]
+    OpenIconFile(#[source] io::Error, String),
+
+```
+
 Now we can replace our `TODO` with the following code!
 
 ```rust,noplaypen
 if let Some(icon_path) = config.icon.as_ref() {
-    let image = Reader::open(icon_path)?.decode()?.into_rgba8();
+    let image = Reader::open(icon_path)
+        .map_err(|error| ApplicationError::OpenIconFile(error, icon_path.to_string()))?
+        .decode()
+        .map_err(|error| ApplicationError::DecodeIconFile(error, icon_path.to_string()))?
+        .into_rgba8();
     let (width, height) = image.dimensions();
-    let icon = Icon::from_rgba(image.into_raw(), width, height)?;
+    let icon = Icon::from_rgba(image.into_raw(), width, height)
+        .map_err(ApplicationError::CreateIcon)?;
     window_builder = window_builder.with_window_icon(Some(icon));
 }
 ```
@@ -227,7 +241,7 @@ pub struct Editor;
 
 fn main() -> Result<()> {
     Ok(run(AppConfig {
-        // icon: Some("assets/icon/phantom.png".to_string()),
+        icon: Some("assets/icon/phantom.png".to_string()),
         ..Default::default()
     })?)
 }
@@ -235,13 +249,16 @@ fn main() -> Result<()> {
 
 Run the application again with `cargo run -r --bin editor` and you should see a blank window with our phantom logo!
 
-> To view the console logs, set the `RUST_LOG` environment variable to `debug`
->
-> Mac/Linux:
->
+### Viewing the console logs
+
+To view the console logs, set the `RUST_LOG` environment variable to `debug`.
+
+
+#### Mac/Linux:
+
 > RUST_LOG="debug"
->
-> Windows (powershell):
->
+
+#### Windows (powershell):
+
 > $env:RUST_LOG="debug"
->
+
