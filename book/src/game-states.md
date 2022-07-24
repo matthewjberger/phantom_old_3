@@ -24,45 +24,72 @@ Create a file named `crates/phantom_app/state.rs` with the following contents.
 ```rust,noplaypen
 use crate::Resources;
 use phantom_dependencies::{
-    anyhow::{Context, Result},
-    winit::event::{ElementState, Event, KeyboardInput, MouseButton},
+    thiserror::Error,
+    winit::{
+        dpi::PhysicalSize,
+        event::{ElementState, Event, KeyboardInput, MouseButton},
+    },
 };
-use std::path::PathBuf;
+use std::path::Path;
+
+#[derive(Error, Debug)]
+pub enum StateMachineError {
+    #[error("Failed to get the current surface texture!")]
+    NoStatesPresent,
+}
+
+type Result<T, E = StateMachineError> = std::result::Result<T, E>;
+pub type StateResult<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
+
+pub struct EmptyState {}
+impl State for EmptyState {}
 
 pub trait State {
     fn label(&self) -> String {
         "Unlabeled Game State".to_string()
     }
 
-    fn on_start(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_start(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_stop(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_pause(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_pause(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_stop(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn on_resume(&mut self, _resources: &mut Resources) -> Result<()> {
+    fn on_resume(&mut self, _resources: &mut Resources) -> StateResult<()> {
         Ok(())
     }
 
-    fn update(&mut self, _resources: &mut Resources) -> Result<Transition> {
+    fn update(&mut self, _resources: &mut Resources) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn update_gui(&mut self, _resources: &mut Resources) -> Result<Transition> {
+    fn on_gamepad_event(
+        &mut self,
+        _resources: &mut Resources,
+        _event: GilrsEvent,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
     fn on_file_dropped(
         &mut self,
         _resources: &mut Resources,
-        _path: &PathBuf,
-    ) -> Result<Transition> {
+        _path: &Path,
+    ) -> StateResult<Transition> {
+        Ok(Transition::None)
+    }
+
+    fn on_resize(
+        &mut self,
+        _resources: &mut Resources,
+        _physical_size: &PhysicalSize<u32>,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
@@ -71,17 +98,26 @@ pub trait State {
         _resources: &mut Resources,
         _button: &MouseButton,
         _button_state: &ElementState,
-    ) -> Result<Transition> {
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn on_key(&mut self, _resources: &mut Resources, _input: KeyboardInput) -> Result<Transition> {
+    fn on_key(
+        &mut self,
+        _resources: &mut Resources,
+        _input: KeyboardInput,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 
-    fn on_event(&mut self, _resources: &mut Resources, _event: &Event<()>) -> Result<Transition> {
+    fn on_event(
+        &mut self,
+        _resources: &mut Resources,
+        _event: &Event<()>,
+    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
+
 }
 ```
 
@@ -120,17 +156,14 @@ impl StateMachine {
         if !self.running {
             return None;
         }
-        match self.states.last() {
-            Some(state) => Some(state.label()),
-            None => None,
-        }
+        self.states.last().map(|state| state.label())
     }
 
     pub fn is_running(&self) -> bool {
         self.running
     }
 
-    pub fn start(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn start(&mut self, resources: &mut Resources) -> StateResult<()> {
         if self.running {
             return Ok(());
         }
@@ -138,15 +171,19 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    pub fn handle_event(&mut self, resources: &mut Resources, event: &Event<()>) -> Result<()> {
+    pub fn handle_event(
+        &mut self,
+        resources: &mut Resources,
+        event: &Event<()>,
+    ) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
-        let transition = self.active_state_mut()?.on_event(resources, &event)?;
+        let transition = self.active_state_mut()?.on_event(resources, event)?;
         self.transition(transition, resources)
     }
 
-    pub fn update(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn update(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -154,11 +191,39 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &PathBuf) -> Result<()> {
+    pub fn on_gamepad_event(
+        &mut self,
+        resources: &mut Resources,
+        event: GilrsEvent,
+    ) -> StateResult<()> {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self
+            .active_state_mut()?
+            .on_gamepad_event(resources, event)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_file_dropped(&mut self, resources: &mut Resources, path: &Path) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
         let transition = self.active_state_mut()?.on_file_dropped(resources, path)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn on_resize(
+        &mut self,
+        resources: &mut Resources,
+        physical_size: &PhysicalSize<u32>,
+    ) -> StateResult<()> {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self
+            .active_state_mut()?
+            .on_resize(resources, physical_size)?;
         self.transition(transition, resources)
     }
 
@@ -167,7 +232,7 @@ impl StateMachine {
         resources: &mut Resources,
         button: &MouseButton,
         button_state: &ElementState,
-    ) -> Result<()> {
+    ) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -177,7 +242,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_key(&mut self, resources: &mut Resources, input: KeyboardInput) -> Result<()> {
+    pub fn on_key(&mut self, resources: &mut Resources, input: KeyboardInput) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -185,7 +250,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    pub fn on_event(&mut self, resources: &mut Resources, event: &Event<()>) -> Result<()> {
+    pub fn on_event(&mut self, resources: &mut Resources, event: &Event<()>) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -193,7 +258,7 @@ impl StateMachine {
         self.transition(transition, resources)
     }
 
-    fn transition(&mut self, request: Transition, resources: &mut Resources) -> Result<()> {
+    fn transition(&mut self, request: Transition, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -209,10 +274,10 @@ impl StateMachine {
     fn active_state_mut(&mut self) -> Result<&mut Box<(dyn State + 'static)>> {
         self.states
             .last_mut()
-            .context("Tried to access state in state machine with no states present!")
+            .ok_or(StateMachineError::NoStatesPresent)
     }
 
-    fn switch(&mut self, state: Box<dyn State>, resources: &mut Resources) -> Result<()> {
+    fn switch(&mut self, state: Box<dyn State>, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -223,7 +288,7 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    fn push(&mut self, state: Box<dyn State>, resources: &mut Resources) -> Result<()> {
+    fn push(&mut self, state: Box<dyn State>, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -234,7 +299,7 @@ impl StateMachine {
         self.active_state_mut()?.on_start(resources)
     }
 
-    fn pop(&mut self, resources: &mut Resources) -> Result<()> {
+    fn pop(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -251,7 +316,7 @@ impl StateMachine {
         }
     }
 
-    pub fn stop(&mut self, resources: &mut Resources) -> Result<()> {
+    pub fn stop(&mut self, resources: &mut Resources) -> StateResult<()> {
         if !self.running {
             return Ok(());
         }
@@ -261,6 +326,7 @@ impl StateMachine {
         self.running = false;
         Ok(())
     }
+
 }
 ```
 
@@ -296,14 +362,35 @@ This allows us to use the `state_machine` in our event handlers!
 
 ```rust,noplaypen
 
+#[derive(Error, Debug)]
+pub enum ApplicationError {
+    #[error("Failed to handle an event in the state machine!")]
+    HandleEvent(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to start the state machine!")]
+    StartStateMachine(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to stop the state machine!")]
+    StopStateMachine(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to update the state machine!")]
+    UpdateStateMachine(#[source] Box<dyn std::error::Error>),
+
+    ...
+}
+
 fn run_loop(
     ...
 ) -> Result<()> {
     if !state_machine.is_running() {
-        state_machine.start(&mut resources)?;
+        state_machine
+            .start(&mut resources)
+            .map_err(ApplicationError::StartStateMachine)?;
     }
 
-    state_machine.handle_event(&mut resources, event)?;
+    state_machine
+        .handle_event(&mut resources, event)
+        .map_err(ApplicationError::HandleEvent)?;
 
     match event {
         Event::MainEventsCleared => {
@@ -329,8 +416,22 @@ fn run_loop(
                 state_machine.on_file_dropped(&mut resources, path)?;
             }
 
+            WindowEvent::Resized(physical_size) => {
+                state_machine
+                    .on_resize(&mut resources, physical_size)
+                    .map_err(ApplicationError::HandleEvent)?;
+            }
+
+
             _ => {}
         },
+
+        Event::LoopDestroyed => {
+            state_machine
+                .stop(&mut resources)
+                .map_err(ApplicationError::StopStateMachine)?;
+        }
+
         _ => {}
     }
     Ok(())
@@ -398,6 +499,16 @@ impl State for Editor {
         );
         Ok(Transition::None)
     }
+
+    fn on_resize(
+        &mut self,
+        _resources: &mut Resources,
+        physical_size: &PhysicalSize<u32>,
+    ) -> StateResult<Transition> {
+        log::trace!("Window resized: {:#?}", physical_size);
+        Ok(Transition::None)
+    }
+
 
     fn on_mouse(
         &mut self,
