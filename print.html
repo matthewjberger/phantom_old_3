@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="adding-dependencies.html"><strong aria-hidden="true">1.2.</strong> Adding Dependencies</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.3.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="game-states.html"><strong aria-hidden="true">1.4.</strong> Game States</a></li><li class="chapter-item expanded "><a href="tracking-input.html"><strong aria-hidden="true">1.5.</strong> Tracking Input</a></li><li class="chapter-item expanded "><a href="gamepads.html"><strong aria-hidden="true">1.6.</strong> Gamepads</a></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">2.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">2.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">2.2.</strong> B - Keywords</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="final-project-preview.html">Final Project Preview</a></li><li class="chapter-item expanded "><a href="getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project-setup.html"><strong aria-hidden="true">1.1.</strong> Project Setup</a></li><li class="chapter-item expanded "><a href="adding-dependencies.html"><strong aria-hidden="true">1.2.</strong> Adding Dependencies</a></li><li class="chapter-item expanded "><a href="creating-an-application.html"><strong aria-hidden="true">1.3.</strong> Creating an Application</a></li><li class="chapter-item expanded "><a href="game-states.html"><strong aria-hidden="true">1.4.</strong> Game States</a></li><li class="chapter-item expanded "><a href="tracking-input.html"><strong aria-hidden="true">1.5.</strong> Tracking Input</a></li><li class="chapter-item expanded "><a href="gamepads.html"><strong aria-hidden="true">1.6.</strong> Gamepads</a></li></ol></li><li class="chapter-item expanded "><a href="rendering.html"><strong aria-hidden="true">2.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="creating-the-renderer.html"><strong aria-hidden="true">2.1.</strong> Creating the Renderer</a></li><li class="chapter-item expanded "><a href="using-the-renderer.html"><strong aria-hidden="true">2.2.</strong> Using the Renderer</a></li><li class="chapter-item expanded "><a href="creating-a-gui.html"><strong aria-hidden="true">2.3.</strong> Creating a GUI</a></li></ol></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">3.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix-further-reading.html"><strong aria-hidden="true">3.1.</strong> A - Further Reading</a></li><li class="chapter-item expanded "><a href="appendix-keywords.html"><strong aria-hidden="true">3.2.</strong> B - Keywords</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -167,7 +167,12 @@
 <p>The code in this chapter will serve as the project's foundation.</p>
 <p><img src="images/chapter1.png" alt="chapter-1" /></p>
 <h2 id="chapter-2"><a class="header" href="#chapter-2">Chapter 2</a></h2>
-<p>TBD</p>
+<ul>
+<li>Create a renderer</li>
+<li>Setup a GUI</li>
+<li>Render a basic scene</li>
+</ul>
+<p><img src="images/chapter2.png" alt="chapter-2" /></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
 <h2 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h2>
 <p>This project requires the <a href="https://www.rust-lang.org/">Rust programming language</a>.</p>
@@ -1367,7 +1372,7 @@ pub fn run(...) {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="gamepads"><a class="header" href="#gamepads">Gamepads</a></h1>
 <p>To handle gamepads, we will use the <a href="https://gitlab.com/gilrs-project/gilrs">gilrs</a> library. This library abstracts platform specific APIs to provide unified interfaces for working with gamepads and supports a wide variety of controllers.</p>
 <p>To integrate this library, let's first add <code>gilrs</code> as a dependency.</p>
-<pre><code class="language-bash">cargo add gilrs -p nalgebra_glm
+<pre><code class="language-bash">cargo add gilrs -p phantom_dependencies
 </code></pre>
 <p>Then, export it in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
 <pre><code class="language-bash">pub use gilrs as glm;
@@ -1496,6 +1501,233 @@ impl State for Editor {
 }
 </code></pre>
 <p>Now, with a controller hooked up you'll be able to interact with your application!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rendering"><a class="header" href="#rendering">Rendering</a></h1>
+<p>For rendering, we'll use <a href="https://github.com/gfx-rs/wgpu">wgpu</a>, which is a safe and portable GPU abstraction in rust that implements the WebGPU API. Without this library, we would have write our own GPU abstraction and create separate backends for that abstraction. Supporting as many different platforms as possible for the sake of this engine provides flexibility. We could render on <code>Android</code> with <a href="https://www.vulkan.org/">Vulkan</a>, <code>Windows</code> with <a href="https://developer.nvidia.com/directx">DirectX</a>, <code>IOS</code> and <code>MacOS</code> with <a href="https://developer.apple.com/metal/">Metal</a>, or maybe even the web using <a href="https://www.khronos.org/webgl/">webgl</a> (and eventually <a href="https://www.w3.org/TR/webgpu/">webgpu</a>!).</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-the-renderer"><a class="header" href="#creating-the-renderer">Creating the Renderer</a></h1>
+<p>Let's begin by adding the dependencies we need for rendering.</p>
+<pre><code class="language-bash">cargo add wgpu@0.13.1 -p phantom_dependencies
+cargo add raw_window_handle@0.4.3 -p phantom_dependencies
+</code></pre>
+<p>Then, export these dependencies in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
+<pre><code class="language-rust noplaypen">pub use raw_window_handle;
+pub use wgpu;
+</code></pre>
+<h2 id="creating-the-render-module"><a class="header" href="#creating-the-render-module">Creating the Render Module</a></h2>
+<p>First, we'll modify <code>crates/phantom_render/src/lib.rs</code> to
+specify a <code>renderer</code> module.</p>
+<pre><code class="language-rust noplaypen">mod renderer;
+
+pub use self::renderer::*;
+</code></pre>
+<p>Then in our new <code>renderer</code> module, we can begin creating the actual renderer.</p>
+<blockquote>
+<p>TODO: Break this up into sections and explain each section</p>
+</blockquote>
+<pre><code class="language-rust noplaypen">// crates/phantom_render/src/renderer.rs
+use phantom_dependencies::{
+    log, pollster,
+    raw_window_handle::HasRawWindowHandle,
+    thiserror::Error,
+    wgpu::{
+        self, Device, Queue, RequestDeviceError, Surface, SurfaceConfiguration, SurfaceError,
+        TextureViewDescriptor,
+    },
+};
+use std::cmp::max;
+
+#[derive(Error, Debug)]
+pub enum RendererError {
+    #[error(&quot;Failed to get the current surface texture!&quot;)]
+    GetSurfaceTexture(#[source] SurfaceError),
+
+    #[error(&quot;No suitable GPU adapters found on the system!&quot;)]
+    NoSuitableGpuAdapters,
+
+    #[error(&quot;Failed to find a support swapchain format!&quot;)]
+    NoSupportedSwapchainFormat,
+
+    #[error(&quot;Failed to request a device!&quot;)]
+    RequestDevice(#[source] RequestDeviceError),
+}
+
+type Result&lt;T, E = RendererError&gt; = std::result::Result&lt;T, E&gt;;
+
+#[derive(Default, Copy, Clone)]
+pub struct Viewport {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Viewport {
+    pub fn aspect_ratio(&amp;self) -&gt; f32 {
+        self.width as f32 / max(self.height, 0) as f32
+    }
+}
+
+pub struct Renderer {
+    pub surface: Surface,
+    pub device: Device,
+    pub queue: Queue,
+    pub config: SurfaceConfiguration,
+}
+
+impl Renderer {
+    pub fn new(window_handle: &amp;impl HasRawWindowHandle, viewport: &amp;Viewport) -&gt; Result&lt;Self&gt; {
+        pollster::block_on(Renderer::new_async(window_handle, viewport))
+    }
+
+    pub fn update(&amp;mut self) -&gt; Result&lt;()&gt; {
+        Ok(())
+    }
+
+    pub fn resize(&amp;mut self, dimensions: [u32; 2]) {
+        log::info!(
+            &quot;Resizing renderer surface to: ({}, {})&quot;,
+            dimensions[0],
+            dimensions[1]
+        );
+        if dimensions[0] == 0 || dimensions[1] == 0 {
+            return;
+        }
+        self.config.width = dimensions[0];
+        self.config.height = dimensions[1];
+        self.surface.configure(&amp;self.device, &amp;self.config);
+    }
+
+    pub fn render_frame(&amp;mut self) -&gt; Result&lt;()&gt; {
+        let surface_texture = self
+            .surface
+            .get_current_texture()
+            .map_err(RendererError::GetSurfaceTexture)?;
+
+        let view = surface_texture
+            .texture
+            .create_view(&amp;TextureViewDescriptor::default());
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&amp;wgpu::CommandEncoderDescriptor {
+                label: Some(&quot;Render Encoder&quot;),
+            });
+
+        encoder.insert_debug_marker(&quot;Render scene&quot;);
+        encoder.begin_render_pass(&amp;wgpu::RenderPassDescriptor {
+            label: Some(&quot;Render Pass&quot;),
+            color_attachments: &amp;[Some(wgpu::RenderPassColorAttachment {
+                view: &amp;view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+        surface_texture.present();
+
+        Ok(())
+    }
+
+    pub fn aspect_ratio(&amp;self) -&gt; f32 {
+        self.config.width as f32 / std::cmp::max(1, self.config.height) as f32
+    }
+
+    async fn new_async(
+        window_handle: &amp;impl HasRawWindowHandle,
+        viewport: &amp;Viewport,
+    ) -&gt; Result&lt;Self&gt; {
+        let instance = wgpu::Instance::new(Self::backends());
+
+        let surface = unsafe { instance.create_surface(window_handle) };
+
+        let adapter = Self::create_adapter(&amp;instance, &amp;surface).await?;
+
+        let (device, queue) = Self::request_device(&amp;adapter).await?;
+
+        let swapchain_format = *surface
+            .get_supported_formats(&amp;adapter)
+            .first()
+            .ok_or(RendererError::NoSupportedSwapchainFormat)?;
+
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: swapchain_format,
+            width: viewport.width,
+            height: viewport.height,
+            present_mode: wgpu::PresentMode::Fifo,
+        };
+        surface.configure(&amp;device, &amp;config);
+
+        Ok(Self {
+            surface,
+            device,
+            queue,
+            config,
+        })
+    }
+
+    fn backends() -&gt; wgpu::Backends {
+        wgpu::util::backend_bits_from_env().unwrap_or_else(wgpu::Backends::all)
+    }
+
+    fn required_limits(adapter: &amp;wgpu::Adapter) -&gt; wgpu::Limits {
+        wgpu::Limits::default()
+            // Use the texture resolution limits from the adapter
+            // to support images the size of the surface
+            .using_resolution(adapter.limits())
+    }
+
+    fn required_features() -&gt; wgpu::Features {
+        wgpu::Features::empty()
+    }
+
+    fn optional_features() -&gt; wgpu::Features {
+        wgpu::Features::empty()
+    }
+
+    async fn create_adapter(
+        instance: &amp;wgpu::Instance,
+        surface: &amp;wgpu::Surface,
+    ) -&gt; Result&lt;wgpu::Adapter&gt; {
+        wgpu::util::initialize_adapter_from_env_or_default(
+            instance,
+            Self::backends(),
+            Some(surface),
+        )
+        .await
+        .ok_or(RendererError::NoSuitableGpuAdapters)
+    }
+
+    async fn request_device(adapter: &amp;wgpu::Adapter) -&gt; Result&lt;(wgpu::Device, wgpu::Queue)&gt; {
+        log::info!(&quot;WGPU Adapter Features: {:#?}&quot;, adapter.features());
+
+        adapter
+            .request_device(
+                &amp;wgpu::DeviceDescriptor {
+                    features: (Self::optional_features() &amp; adapter.features())
+                        | Self::required_features(),
+                    limits: Self::required_limits(adapter),
+                    label: Some(&quot;Render Device&quot;),
+                },
+                None,
+            )
+            .await
+            .map_err(RendererError::RequestDevice)
+    }
+}
+
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="using-the-renderer"><a class="header" href="#using-the-renderer">Using the Renderer</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-gui"><a class="header" href="#creating-a-gui">Creating a GUI</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="a---further-reading"><a class="header" href="#a---further-reading">A - Further Reading</a></h1>
 <ul>
