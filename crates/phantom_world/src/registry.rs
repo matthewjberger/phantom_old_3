@@ -20,6 +20,9 @@ pub enum RegistryError {
 
     #[error("Failed to deserialized world!")]
     SerializeWorld(#[source] bincode::Error),
+
+    #[error("Failed to access component registry!")]
+    AccessComponentRegistry,
 }
 
 type Result<T, E = RegistryError> = std::result::Result<T, E>;
@@ -44,7 +47,7 @@ pub fn register_component<T: Component + Serialize + for<'de> Deserialize<'de>>(
 ) -> Result<()> {
     let mut registry = COMPONENT_REGISTRY
         .write()
-        .expect("Failed to access component registry!");
+        .map_err(|_| RegistryError::AccessComponentRegistry)?;
     registry.register::<T>(key.to_string());
     Ok(())
 }

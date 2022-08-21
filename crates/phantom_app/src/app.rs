@@ -63,6 +63,9 @@ pub enum ApplicationError {
 
     #[error("Failed to to update the gui!")]
     UpdateGui(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to to update the gui!")]
+    GetActiveCameraMatrices(#[source] WorldError),
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
@@ -227,7 +230,7 @@ fn run_loop(
             let (projection, view) = resources
                 .world
                 .active_camera_matrices(resources.renderer.aspect_ratio())
-                .unwrap();
+                .map_err(ApplicationError::GetActiveCameraMatrices)?;
 
             resources
                 .renderer

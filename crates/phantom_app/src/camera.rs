@@ -1,11 +1,31 @@
-use crate::Resources;
+use crate::{ResourceError, Resources};
 use phantom_dependencies::{
-    anyhow::Result,
-    legion::EntityStore,
+    legion::{
+        world::{ComponentError, EntityAccessError},
+        EntityStore,
+    },
     nalgebra_glm as glm,
+    thiserror::Error,
     winit::{event::VirtualKeyCode, window::CursorGrabMode},
 };
 use phantom_world::{Entity, Transform};
+
+#[derive(Error, Debug)]
+pub enum CameraError {
+    #[error("Failed to access entity!")]
+    AccessEntity(#[from] EntityAccessError),
+
+    #[error("Failed to get transform!")]
+    GetComponent(#[from] ComponentError),
+
+    #[error("Failed to set cursor grab mode!")]
+    SetCursorGrabMode(#[source] ResourceError),
+
+    #[error("Failed to center cursor!")]
+    CenterCursor(#[source] ResourceError),
+}
+
+type Result<T, E = CameraError> = std::result::Result<T, E>;
 
 #[derive(Default)]
 pub struct MouseOrbit {
@@ -39,7 +59,9 @@ impl MouseOrbit {
             transform.rotation = self.orientation.look_at_offset();
         }
 
-        resources.set_cursor_grab(CursorGrabMode::None)?;
+        resources
+            .set_cursor_grab(CursorGrabMode::None)
+            .map_err(CameraError::SetCursorGrabMode)?;
         resources.set_cursor_visible(true);
 
         Ok(())
@@ -64,9 +86,13 @@ impl MouseLook {
             transform.rotation = self.orientation.look_forward();
         }
 
-        resources.set_cursor_grab(CursorGrabMode::Confined)?;
+        resources
+            .set_cursor_grab(CursorGrabMode::Confined)
+            .map_err(CameraError::SetCursorGrabMode)?;
         resources.set_cursor_visible(false);
-        resources.center_cursor()?;
+        resources
+            .center_cursor()
+            .map_err(CameraError::CenterCursor)?;
 
         Ok(())
     }

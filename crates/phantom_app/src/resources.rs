@@ -4,17 +4,33 @@ mod system;
 pub use self::{input::*, system::*};
 
 use phantom_dependencies::{
-    anyhow::Result,
     gilrs::Gilrs,
+    legion::world::EntityAccessError,
     nalgebra_glm as glm,
+    thiserror::Error,
     winit::{
         dpi::PhysicalPosition,
+        error::ExternalError,
         window::{CursorGrabMode, Fullscreen, Window},
     },
 };
 use phantom_gui::Gui;
 use phantom_render::Renderer;
 use phantom_world::World;
+
+#[derive(Error, Debug)]
+pub enum ResourceError {
+    #[error("Failed to access entity!")]
+    AccessEntity(#[from] EntityAccessError),
+
+    #[error("Failed to set cursor grab mode!")]
+    SetCursorGrabMode(#[source] ExternalError),
+
+    #[error("Failed to set cursor position!")]
+    SetCursorPosition(#[source] ExternalError),
+}
+
+type Result<T, E = ResourceError> = std::result::Result<T, E>;
 
 pub struct Resources<'a> {
     pub renderer: &'a mut Renderer,
@@ -28,7 +44,9 @@ pub struct Resources<'a> {
 
 impl<'a> Resources<'a> {
     pub fn set_cursor_grab(&mut self, grab: CursorGrabMode) -> Result<()> {
-        Ok(self.window.set_cursor_grab(grab)?)
+        self.window
+            .set_cursor_grab(grab)
+            .map_err(ResourceError::SetCursorGrabMode)
     }
 
     pub fn set_cursor_visible(&mut self, visible: bool) {
@@ -40,9 +58,9 @@ impl<'a> Resources<'a> {
     }
 
     pub fn set_cursor_position(&mut self, position: &glm::Vec2) -> Result<()> {
-        Ok(self
-            .window
-            .set_cursor_position(PhysicalPosition::new(position.x, position.y))?)
+        self.window
+            .set_cursor_position(PhysicalPosition::new(position.x, position.y))
+            .map_err(ResourceError::SetCursorPosition)
     }
 
     pub fn set_fullscreen(&mut self) {
