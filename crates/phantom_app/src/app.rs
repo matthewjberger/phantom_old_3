@@ -17,6 +17,7 @@ use phantom_dependencies::{
 };
 use phantom_gui::Gui;
 use phantom_render::{Renderer, RendererError, Viewport};
+use phantom_world::{World, WorldError};
 use std::io;
 
 #[derive(Error, Debug)]
@@ -26,6 +27,9 @@ pub enum ApplicationError {
 
     #[error("Failed to create a window!")]
     CreateWindow(#[source] winit::error::OsError),
+
+    #[error("Failed to create world!")]
+    CreateWorld(#[source] WorldError),
 
     #[error("Failed to create the renderer!")]
     CreateRenderer(#[source] RendererError),
@@ -134,8 +138,11 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
 
     let mut gui = Gui::new(&window, &event_loop);
 
+    let mut world = World::new().map_err(ApplicationError::CreateWorld)?;
+
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
+            world: &mut world,
             window: &mut window,
             gui: &mut gui,
             gilrs: &mut gilrs,
