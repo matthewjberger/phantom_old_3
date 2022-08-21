@@ -203,13 +203,7 @@ impl Scene {
         renderpass.draw_indexed(0..(INDICES.len() as _), 0, 0..1);
     }
 
-    pub fn update(&mut self, queue: &Queue, aspect_ratio: f32) {
-        let projection = glm::perspective_lh_zo(aspect_ratio, 80_f32.to_radians(), 0.1, 1000.0);
-        let view = glm::look_at_lh(
-            &glm::vec3(0.0, 0.0, 3.0),
-            &glm::vec3(0.0, 0.0, 0.0),
-            &glm::Vec3::y(),
-        );
+    pub fn update(&mut self, projection: glm::Mat4, view: glm::Mat4, queue: &Queue) {
         self.model = glm::rotate(&self.model, 1_f32.to_radians(), &glm::Vec3::y());
 
         self.uniform.update_buffer(

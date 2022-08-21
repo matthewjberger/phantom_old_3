@@ -230,8 +230,19 @@ fn run_loop(
                 .update(&mut resources)
                 .map_err(ApplicationError::UpdateStateMachine)?;
 
+            let (projection, view) = resources
+                .world
+                .active_camera_matrices(renderer.aspect_ratio())
+                .unwrap();
+
             renderer
-                .update(&textures_delta, &screen_descriptor, &paint_jobs)
+                .update(
+                    projection,
+                    view,
+                    &textures_delta,
+                    &screen_descriptor,
+                    &paint_jobs,
+                )
                 .map_err(ApplicationError::UpdateRenderer)?;
             renderer
                 .render_frame(&paint_jobs, &screen_descriptor)

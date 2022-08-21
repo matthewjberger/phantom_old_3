@@ -1,7 +1,7 @@
 use phantom_dependencies::{
     egui::{ClippedPrimitive, TexturesDelta},
     egui_wgpu::renderer::ScreenDescriptor,
-    log, pollster,
+    log, nalgebra_glm as glm, pollster,
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
     wgpu::{
@@ -100,6 +100,8 @@ impl Renderer {
 
     pub fn update(
         &mut self,
+        projection: glm::Mat4,
+        view: glm::Mat4,
         textures_delta: &TexturesDelta,
         screen_descriptor: &ScreenDescriptor,
         paint_jobs: &[ClippedPrimitive],
@@ -108,7 +110,7 @@ impl Renderer {
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
-        self.scene.update(&self.queue, self.aspect_ratio());
+        self.scene.update(projection, view, &self.queue);
         Ok(())
     }
 
