@@ -9,6 +9,7 @@ members = ["apps/*", "crates/*"]
 
 [dependencies]
 phantom_app = { path = "crates/phantom_app" }
+phantom_audio = { path = "crates/phantom_audio" }
 phantom_dependencies = { path = "crates/phantom_dependencies" }
 phantom_gui = { path = "crates/phantom_gui" }
 phantom_render = { path = "crates/phantom_render" }

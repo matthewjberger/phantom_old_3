@@ -25,6 +25,7 @@ petgraph = { version = "0.6.0", features = ["serde-1"] }
 pollster = "0.2.5"
 rapier3d = { version = "0.14.0",  features = ["serde-serialize"] }
 raw-window-handle = "0.4.3"
+rodio = "0.15.0"
 serde = "1.0.137"
 thiserror = "1.0.31"
 wgpu = "0.13.1"

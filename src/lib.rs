@@ -2,6 +2,10 @@ pub mod app {
     pub use phantom_app::*;
 }
 
+pub mod audio {
+    pub use phantom_audio::*;
+}
+
 pub mod dependencies {
     pub use phantom_dependencies::*;
 }
