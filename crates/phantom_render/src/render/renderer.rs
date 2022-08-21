@@ -1,4 +1,3 @@
-use super::gui::GuiRender;
 use phantom_dependencies::{
     egui::{ClippedPrimitive, TexturesDelta},
     egui_wgpu::renderer::ScreenDescriptor,
@@ -11,6 +10,8 @@ use phantom_dependencies::{
     },
 };
 use std::cmp::max;
+
+use super::{gui::GuiRender, world::Scene};
 
 #[derive(Error, Debug)]
 pub enum RendererError {
@@ -49,11 +50,52 @@ pub struct Renderer {
     pub queue: Queue,
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
+    pub scene: Scene,
 }
 
 impl Renderer {
     pub fn new(window_handle: &impl HasRawWindowHandle, viewport: &Viewport) -> Result<Self> {
         pollster::block_on(Renderer::new_async(window_handle, viewport))
+    }
+
+    async fn new_async(
+        window_handle: &impl HasRawWindowHandle,
+        viewport: &Viewport,
+    ) -> Result<Self> {
+        let instance = wgpu::Instance::new(Self::backends());
+
+        let surface = unsafe { instance.create_surface(window_handle) };
+
+        let adapter = Self::create_adapter(&instance, &surface).await?;
+
+        let (device, queue) = Self::request_device(&adapter).await?;
+
+        let swapchain_format = *surface
+            .get_supported_formats(&adapter)
+            .first()
+            .ok_or(RendererError::NoSupportedSwapchainFormat)?;
+
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: swapchain_format,
+            width: viewport.width,
+            height: viewport.height,
+            present_mode: wgpu::PresentMode::Fifo,
+        };
+        surface.configure(&device, &config);
+
+        let gui = GuiRender::new(&device, config.format, 1);
+
+        let scene = Scene::new(&device, config.format);
+
+        Ok(Self {
+            surface,
+            device,
+            queue,
+            config,
+            gui,
+            scene,
+        })
     }
 
     pub fn update(
@@ -66,6 +108,7 @@ impl Renderer {
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
+        self.scene.update(&self.queue, self.aspect_ratio());
         Ok(())
     }
 
@@ -103,24 +146,28 @@ impl Renderer {
                 label: Some("Render Encoder"),
             });
 
-        encoder.insert_debug_marker("Render scene");
-        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: None,
-        });
+        {
+            encoder.insert_debug_marker("Render scene");
+            let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: None,
+            });
+
+            self.scene.render(&mut renderpass);
+        }
 
         self.gui
             .execute(&mut encoder, &view, paint_jobs, screen_descriptor, None);
@@ -133,43 +180,6 @@ impl Renderer {
 
     pub fn aspect_ratio(&self) -> f32 {
         self.config.width as f32 / std::cmp::max(1, self.config.height) as f32
-    }
-
-    async fn new_async(
-        window_handle: &impl HasRawWindowHandle,
-        viewport: &Viewport,
-    ) -> Result<Self> {
-        let instance = wgpu::Instance::new(Self::backends());
-
-        let surface = unsafe { instance.create_surface(window_handle) };
-
-        let adapter = Self::create_adapter(&instance, &surface).await?;
-
-        let (device, queue) = Self::request_device(&adapter).await?;
-
-        let swapchain_format = *surface
-            .get_supported_formats(&adapter)
-            .first()
-            .ok_or(RendererError::NoSupportedSwapchainFormat)?;
-
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: swapchain_format,
-            width: viewport.width,
-            height: viewport.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
-        surface.configure(&device, &config);
-
-        let gui = GuiRender::new(&device, config.format, 1);
-
-        Ok(Self {
-            surface,
-            device,
-            queue,
-            config,
-            gui,
-        })
     }
 
     fn backends() -> wgpu::Backends {
