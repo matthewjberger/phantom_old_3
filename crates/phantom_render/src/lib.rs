@@ -1,3 +1,3 @@
-mod renderer;
+mod render;
 
-pub use self::renderer::*;
+pub use self::render::*;

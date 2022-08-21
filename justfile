@@ -1,7 +1,7 @@
-# Disable this if not running on windows
-set shell := ["powershell.exe", "-c"]
+set windows-shell := ["powershell.exe"]
 
 export RUST_BACKTRACE := "1"
+export RUST_LOG := "info"
 
 editor:
   cargo run -r --bin editor
@@ -12,14 +12,16 @@ check:
 format:
   cargo fmt --all
 
+lint:
+  cargo clippy
+
 test:
-    cargo test
+  cargo test --workspace
 
 versions:
-    rustc --version
-    cargo fmt -- --version
-    cargo clippy -- --version
+  rustc --version
+  cargo fmt -- --version
+  cargo clippy -- --version
 
 viewer:
   cargo run -r --bin viewer
-

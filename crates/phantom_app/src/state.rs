@@ -46,6 +46,10 @@ pub trait State {
         Ok(Transition::None)
     }
 
+    fn update_gui(&mut self, _resources: &mut Resources) -> StateResult<Transition> {
+        Ok(Transition::None)
+    }
+
     fn on_gamepad_event(
         &mut self,
         _resources: &mut Resources,
@@ -153,6 +157,14 @@ impl StateMachine {
             return Ok(());
         }
         let transition = self.active_state_mut()?.update(resources)?;
+        self.transition(transition, resources)
+    }
+
+    pub fn update_gui(&mut self, resources: &mut Resources) -> StateResult<()> {
+        if !self.running {
+            return Ok(());
+        }
+        let transition = self.active_state_mut()?.update_gui(resources)?;
         self.transition(transition, resources)
     }
 

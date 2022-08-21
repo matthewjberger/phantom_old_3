@@ -1,5 +1,7 @@
 use crate::{Input, Resources, State, StateMachine, System};
 use phantom_dependencies::{
+    egui::FullOutput,
+    egui_wgpu::renderer::ScreenDescriptor,
     env_logger,
     gilrs::{self, Gilrs},
     image::{self, io::Reader},
@@ -13,6 +15,7 @@ use phantom_dependencies::{
         window::{Fullscreen, Icon, WindowBuilder},
     },
 };
+use phantom_gui::Gui;
 use phantom_render::{Renderer, RendererError, Viewport};
 use std::io;
 
@@ -53,6 +56,9 @@ pub enum ApplicationError {
 
     #[error("Failed to update the state machine!")]
     UpdateStateMachine(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to to update the gui!")]
+    UpdateGui(#[source] Box<dyn std::error::Error>),
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
@@ -126,9 +132,12 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     )
     .map_err(ApplicationError::CreateRenderer)?;
 
+    let mut gui = Gui::new(&window, &event_loop);
+
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
             window: &mut window,
+            gui: &mut gui,
             gilrs: &mut gilrs,
             input: &mut input,
             system: &mut system,
@@ -152,6 +161,28 @@ fn run_loop(
     renderer: &mut Renderer,
     mut resources: Resources,
 ) -> Result<()> {
+    if resources.system.exit_requested {
+        *control_flow = ControlFlow::Exit;
+    }
+
+    let gui_captured_event = match event {
+        Event::WindowEvent { event, window_id } => {
+            if *window_id == resources.window.id() {
+                resources.gui.handle_window_event(event)
+            } else {
+                false
+            }
+        }
+        _ => false,
+    };
+
+    if !gui_captured_event {
+        resources.system.handle_event(event);
+        resources
+            .input
+            .handle_event(event, resources.system.window_center());
+    }
+
     if !state_machine.is_running() {
         state_machine
             .start(&mut resources)
@@ -170,14 +201,33 @@ fn run_loop(
 
     match event {
         Event::MainEventsCleared => {
+            resources.gui.begin_frame(resources.window);
+            state_machine
+                .update_gui(&mut resources)
+                .map_err(ApplicationError::UpdateGui)?;
+            let output = resources.gui.end_frame();
+
+            let FullOutput {
+                textures_delta,
+                shapes,
+                ..
+            } = output;
+            let paint_jobs = resources.gui.context.tessellate(shapes);
+            let window_size = resources.window.inner_size();
+            let screen_descriptor = ScreenDescriptor {
+                size_in_pixels: [window_size.width, window_size.height],
+                pixels_per_point: resources.window.scale_factor() as f32,
+            };
+
             state_machine
                 .update(&mut resources)
                 .map_err(ApplicationError::UpdateStateMachine)?;
+
             renderer
-                .update()
+                .update(&textures_delta, &screen_descriptor, &paint_jobs)
                 .map_err(ApplicationError::UpdateRenderer)?;
             renderer
-                .render_frame()
+                .render_frame(&paint_jobs, &screen_descriptor)
                 .map_err(ApplicationError::RenderFrame)?;
         }
 

@@ -1,4 +1,7 @@
+use super::gui::GuiRender;
 use phantom_dependencies::{
+    egui::{ClippedPrimitive, TexturesDelta},
+    egui_wgpu::renderer::ScreenDescriptor,
     log, pollster,
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
@@ -45,6 +48,7 @@ pub struct Renderer {
     pub device: Device,
     pub queue: Queue,
     pub config: SurfaceConfiguration,
+    pub gui: GuiRender,
 }
 
 impl Renderer {
@@ -52,7 +56,16 @@ impl Renderer {
         pollster::block_on(Renderer::new_async(window_handle, viewport))
     }
 
-    pub fn update(&mut self) -> Result<()> {
+    pub fn update(
+        &mut self,
+        textures_delta: &TexturesDelta,
+        screen_descriptor: &ScreenDescriptor,
+        paint_jobs: &[ClippedPrimitive],
+    ) -> Result<()> {
+        self.gui
+            .update_textures(&self.device, &self.queue, textures_delta);
+        self.gui
+            .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
         Ok(())
     }
 
@@ -70,7 +83,11 @@ impl Renderer {
         self.surface.configure(&self.device, &self.config);
     }
 
-    pub fn render_frame(&mut self) -> Result<()> {
+    pub fn render_frame(
+        &mut self,
+        paint_jobs: &[ClippedPrimitive],
+        screen_descriptor: &ScreenDescriptor,
+    ) -> Result<()> {
         let surface_texture = self
             .surface
             .get_current_texture()
@@ -104,6 +121,9 @@ impl Renderer {
             })],
             depth_stencil_attachment: None,
         });
+
+        self.gui
+            .execute(&mut encoder, &view, paint_jobs, screen_descriptor, None);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         surface_texture.present();
@@ -141,11 +161,14 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
+        let gui = GuiRender::new(&device, config.format, 1);
+
         Ok(Self {
             surface,
             device,
             queue,
             config,
+            gui,
         })
     }
 

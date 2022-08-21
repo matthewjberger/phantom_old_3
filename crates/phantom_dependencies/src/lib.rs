@@ -1,4 +1,7 @@
 pub use anyhow;
+pub use egui;
+pub use egui_wgpu;
+pub use egui_winit;
 pub use env_logger;
 pub use gilrs;
 pub use image;
