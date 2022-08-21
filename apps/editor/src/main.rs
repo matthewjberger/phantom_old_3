@@ -5,9 +5,8 @@ use phantom::{
     dependencies::{
         anyhow::anyhow,
         egui::{self, global_dark_light_mode_switch, menu},
-        gilrs::Event as GilrsEvent,
         log,
-        winit::event::{ElementState, Event, KeyboardInput, MouseButton},
+        winit::event::{ElementState, KeyboardInput, MouseButton},
     },
 };
 
@@ -19,26 +18,6 @@ pub struct Editor {
 impl State for Editor {
     fn label(&self) -> String {
         "Phantom Editor - Main".to_string()
-    }
-
-    fn on_start(&mut self, _resources: &mut Resources) -> StateResult<()> {
-        log::info!("Starting the Phantom editor");
-        Ok(())
-    }
-
-    fn on_stop(&mut self, _resources: &mut Resources) -> StateResult<()> {
-        log::info!("Stopping the Phantom editor");
-        Ok(())
-    }
-
-    fn on_pause(&mut self, _resources: &mut Resources) -> StateResult<()> {
-        log::info!("Editor paused");
-        Ok(())
-    }
-
-    fn on_resume(&mut self, _resources: &mut Resources) -> StateResult<()> {
-        log::info!("Editor unpaused");
-        Ok(())
     }
 
     fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {
@@ -86,16 +65,6 @@ impl State for Editor {
         Ok(Transition::None)
     }
 
-    fn on_gamepad_event(
-        &mut self,
-        _resources: &mut Resources,
-        event: GilrsEvent,
-    ) -> StateResult<Transition> {
-        let GilrsEvent { id, time, event } = event;
-        log::trace!("{:?} New gamepad event from {}: {:?}", time, id, event);
-        Ok(Transition::None)
-    }
-
     fn on_file_dropped(
         &mut self,
         _resources: &mut Resources,
@@ -126,14 +95,6 @@ impl State for Editor {
         input: KeyboardInput,
     ) -> StateResult<Transition> {
         log::trace!("Key event received: {:#?}", input);
-        Ok(Transition::None)
-    }
-
-    fn on_event(
-        &mut self,
-        _resources: &mut Resources,
-        _event: &Event<()>,
-    ) -> StateResult<Transition> {
         Ok(Transition::None)
     }
 }
