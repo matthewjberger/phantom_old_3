@@ -37,6 +37,22 @@ impl State for Editor {
                 menu::bar(ui, |ui| {
                     global_dark_light_mode_switch(ui);
                     ui.menu_button("File", |ui| {
+                        if ui.button("Create New Map").clicked() {
+                            // TODO: Load map
+                        }
+
+                        if ui.button("Load Map").clicked() {
+                            // TODO: Load map
+                        }
+
+                        if ui.button("Import asset").clicked() {
+                            // TODO: Import asset
+                        }
+
+                        if ui.button("Save").clicked() {
+                            // TODO: Save map
+                        }
+
                         if ui.button("Quit").clicked() {
                             resources.system.exit_requested = true;
                         }
@@ -58,7 +74,7 @@ impl State for Editor {
         egui::TopBottomPanel::bottom("console")
             .resizable(true)
             .show(ctx, |ui| {
-                ui.heading("Console");
+                ui.heading("Assets");
                 ui.allocate_space(ui.available_size());
             });
 
