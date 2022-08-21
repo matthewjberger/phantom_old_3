@@ -142,6 +142,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
 
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
+            renderer: &mut renderer,
             world: &mut world,
             window: &mut window,
             gui: &mut gui,
@@ -149,13 +150,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
             input: &mut input,
             system: &mut system,
         };
-        if let Err(error) = run_loop(
-            &mut state_machine,
-            &event,
-            control_flow,
-            &mut renderer,
-            resources,
-        ) {
+        if let Err(error) = run_loop(&mut state_machine, &event, control_flow, resources) {
             log::error!("Application error: {}", error);
         }
     });
@@ -165,7 +160,6 @@ fn run_loop(
     state_machine: &mut StateMachine,
     event: &Event<()>,
     control_flow: &mut ControlFlow,
-    renderer: &mut Renderer,
     mut resources: Resources,
 ) -> Result<()> {
     if resources.system.exit_requested {
@@ -232,10 +226,11 @@ fn run_loop(
 
             let (projection, view) = resources
                 .world
-                .active_camera_matrices(renderer.aspect_ratio())
+                .active_camera_matrices(resources.renderer.aspect_ratio())
                 .unwrap();
 
-            renderer
+            resources
+                .renderer
                 .update(
                     projection,
                     view,
@@ -244,7 +239,8 @@ fn run_loop(
                     &paint_jobs,
                 )
                 .map_err(ApplicationError::UpdateRenderer)?;
-            renderer
+            resources
+                .renderer
                 .render_frame(&paint_jobs, &screen_descriptor)
                 .map_err(ApplicationError::RenderFrame)?;
         }
@@ -280,7 +276,9 @@ fn run_loop(
             }
 
             WindowEvent::Resized(physical_size) => {
-                renderer.resize([physical_size.width, physical_size.height]);
+                resources
+                    .renderer
+                    .resize([physical_size.width, physical_size.height]);
                 state_machine
                     .on_resize(&mut resources, physical_size)
                     .map_err(ApplicationError::HandleEvent)?;

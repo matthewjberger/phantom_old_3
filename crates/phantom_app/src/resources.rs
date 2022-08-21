@@ -13,9 +13,11 @@ use phantom_dependencies::{
     },
 };
 use phantom_gui::Gui;
+use phantom_render::Renderer;
 use phantom_world::World;
 
 pub struct Resources<'a> {
+    pub renderer: &'a mut Renderer,
     pub world: &'a mut World,
     pub window: &'a mut Window,
     pub gui: &'a mut Gui,
