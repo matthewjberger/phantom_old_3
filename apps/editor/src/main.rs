@@ -1,5 +1,7 @@
 use phantom::{
-    app::{run, AppConfig, ApplicationError, Resources, State, StateResult, Transition},
+    app::{
+        run, AppConfig, ApplicationError, MouseOrbit, Resources, State, StateResult, Transition,
+    },
     dependencies::{
         anyhow::anyhow,
         egui::{self, global_dark_light_mode_switch, menu},
@@ -10,7 +12,9 @@ use phantom::{
 };
 
 #[derive(Default)]
-pub struct Editor;
+pub struct Editor {
+    camera: MouseOrbit,
+}
 
 impl State for Editor {
     fn label(&self) -> String {
@@ -37,7 +41,11 @@ impl State for Editor {
         Ok(())
     }
 
-    fn update(&mut self, _resources: &mut Resources) -> StateResult<Transition> {
+    fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {
+        if resources.world.active_camera_is_main()? {
+            let camera_entity = resources.world.active_camera()?;
+            self.camera.update(resources, camera_entity)?;
+        }
         Ok(Transition::None)
     }
 
