@@ -1,12 +1,14 @@
 mod input;
 mod system;
 
+use std::path::Path;
+
 pub use self::{input::*, system::*};
 
 use phantom_dependencies::{
     gilrs::Gilrs,
     legion::world::EntityAccessError,
-    nalgebra_glm as glm,
+    log, nalgebra_glm as glm,
     thiserror::Error,
     winit::{
         dpi::PhysicalPosition,
@@ -16,7 +18,7 @@ use phantom_dependencies::{
 };
 use phantom_gui::Gui;
 use phantom_render::Renderer;
-use phantom_world::World;
+use phantom_world::{load_gltf, GltfError, World, WorldError};
 
 #[derive(Error, Debug)]
 pub enum ResourceError {
@@ -28,6 +30,12 @@ pub enum ResourceError {
 
     #[error("Failed to set cursor position!")]
     SetCursorPosition(#[source] ExternalError),
+
+    #[error("Failed to load map!")]
+    LoadMap(#[source] WorldError),
+
+    #[error("Failed to load gltf asset!")]
+    LoadGltfAsset(#[source] GltfError),
 }
 
 type Result<T, E = ResourceError> = std::result::Result<T, E>;
@@ -66,5 +74,18 @@ impl<'a> Resources<'a> {
     pub fn set_fullscreen(&mut self) {
         self.window
             .set_fullscreen(Some(Fullscreen::Borderless(self.window.primary_monitor())));
+    }
+
+    pub fn load_map(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        self.world.reload(path).map_err(ResourceError::LoadMap)?;
+        // TODO: Update renderer here
+        Ok(())
+    }
+
+    pub fn load_gltf_asset(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        load_gltf(path, &mut self.world).map_err(ResourceError::LoadGltfAsset)?;
+        // TODO: Update renderer here
+        log::info!("Loaded gltf asset");
+        Ok(())
     }
 }

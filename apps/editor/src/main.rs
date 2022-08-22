@@ -6,6 +6,7 @@ use phantom::{
         anyhow::anyhow,
         egui::{self, global_dark_light_mode_switch, menu},
         log,
+        rfd::FileDialog,
         winit::event::{ElementState, KeyboardInput, MouseButton},
     },
 };
@@ -29,7 +30,7 @@ impl State for Editor {
     }
 
     fn update_gui(&mut self, resources: &mut Resources) -> StateResult<Transition> {
-        let ctx = &resources.gui.context;
+        let ctx = &resources.gui.context.clone();
 
         egui::TopBottomPanel::top("top_panel")
             .resizable(true)
@@ -38,19 +39,45 @@ impl State for Editor {
                     global_dark_light_mode_switch(ui);
                     ui.menu_button("File", |ui| {
                         if ui.button("Create New Map").clicked() {
-                            // TODO: Load map
+                            // TODO: Create map
                         }
 
                         if ui.button("Load Map").clicked() {
-                            // TODO: Load map
+                            let path = FileDialog::new()
+                                .add_filter("Dragonglass Asset", &["dga"])
+                                .set_directory("/")
+                                .pick_file();
+                            if let Some(path) = path {
+                                resources.load_map(&path).unwrap();
+                            }
+                            ui.close_menu();
                         }
 
-                        if ui.button("Import asset").clicked() {
-                            // TODO: Import asset
+                        if ui.button("Import asset (gltf/glb)").clicked() {
+                            let path = FileDialog::new()
+                                .add_filter("GLTF Asset", &["glb", "gltf"])
+                                .set_directory("/")
+                                .pick_file();
+                            if let Some(path) = path {
+                                resources.load_gltf_asset(&path).unwrap();
+                            }
+                            ui.close_menu();
+                        }
+
+                        if ui.button("Load HDR Image").clicked() {
+                            // TODO: Load map
+                            // resources.load_map(path)
                         }
 
                         if ui.button("Save").clicked() {
-                            // TODO: Save map
+                            let path = FileDialog::new()
+                                .add_filter("Dragonglass Asset", &["dga"])
+                                .set_directory("/")
+                                .save_file();
+                            if let Some(path) = path {
+                                resources.world.save(&path).expect("Failed to save world!");
+                            }
+                            ui.close_menu();
                         }
 
                         if ui.button("Quit").clicked() {
@@ -62,7 +89,10 @@ impl State for Editor {
 
         egui::SidePanel::left("scene_explorer")
             .resizable(true)
-            .show(ctx, |_ui| {});
+            .show(ctx, |ui| {
+                ui.heading("Scene Explorer");
+                ui.allocate_space(ui.available_size());
+            });
 
         egui::SidePanel::right("inspector")
             .resizable(true)

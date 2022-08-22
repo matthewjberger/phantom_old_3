@@ -20,6 +20,7 @@ pub use petgraph;
 pub use pollster;
 pub use rapier3d;
 pub use raw_window_handle;
+pub use rfd;
 pub use rodio;
 pub use serde;
 pub use thiserror;
