@@ -1,8 +1,15 @@
 use phantom_dependencies::{
-    egui::{Context as GuiContext, FullOutput},
+    egui::{ClippedPrimitive, Context as GuiContext, FullOutput, TexturesDelta},
+    egui_wgpu::renderer::ScreenDescriptor,
     egui_winit::State,
     winit::{event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window},
 };
+
+pub struct GuiFrameResources<'a> {
+    pub textures_delta: &'a TexturesDelta,
+    pub screen_descriptor: &'a ScreenDescriptor,
+    pub paint_jobs: &'a [ClippedPrimitive],
+}
 
 pub struct Gui {
     pub state: State,

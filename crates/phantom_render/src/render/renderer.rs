@@ -1,7 +1,8 @@
 use phantom_dependencies::{
-    egui::{ClippedPrimitive, TexturesDelta},
+    anyhow,
+    egui::ClippedPrimitive,
     egui_wgpu::renderer::ScreenDescriptor,
-    log, nalgebra_glm as glm, pollster,
+    log, pollster,
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
     wgpu::{
@@ -9,9 +10,14 @@ use phantom_dependencies::{
         TextureViewDescriptor,
     },
 };
+use phantom_gui::GuiFrameResources;
+use phantom_world::World;
 use std::cmp::max;
 
-use super::{gui::GuiRender, world::Scene};
+use super::{
+    gui::GuiRender,
+    world::{render::WorldRender, texture::Texture},
+};
 
 #[derive(Error, Debug)]
 pub enum RendererError {
@@ -26,6 +32,12 @@ pub enum RendererError {
 
     #[error("Failed to request a device!")]
     RequestDevice(#[source] RequestDeviceError),
+
+    #[error("Failed to load world!")]
+    LoadWorld(#[source] anyhow::Error),
+
+    #[error("Failed to update world!")]
+    UpdateWorld(#[source] anyhow::Error),
 }
 
 type Result<T, E = RendererError> = std::result::Result<T, E>;
@@ -50,7 +62,8 @@ pub struct Renderer {
     pub queue: Queue,
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
-    pub scene: Scene,
+    pub world_render: WorldRender,
+    pub depth_texture: Texture,
 }
 
 impl Renderer {
@@ -86,7 +99,14 @@ impl Renderer {
 
         let gui = GuiRender::new(&device, config.format, 1);
 
-        let scene = Scene::new(&device, config.format);
+        let depth_texture = Texture::create_depth_texture(
+            &device,
+            viewport.width,
+            viewport.height,
+            "Depth Texture",
+        );
+
+        let world_render = WorldRender::new(&device, config.format).unwrap();
 
         Ok(Self {
             surface,
@@ -94,24 +114,34 @@ impl Renderer {
             queue,
             config,
             gui,
-            scene,
+            depth_texture,
+            world_render,
         })
+    }
+
+    pub fn sync_world(&mut self, world: &World) -> Result<()> {
+        self.world_render
+            .load(&self.device, &self.queue, world)
+            .map_err(RendererError::LoadWorld)
     }
 
     pub fn update(
         &mut self,
-        projection: glm::Mat4,
-        view: glm::Mat4,
-        textures_delta: &TexturesDelta,
-        screen_descriptor: &ScreenDescriptor,
-        paint_jobs: &[ClippedPrimitive],
+        world: &mut World,
+        gui_frame_resources: &mut GuiFrameResources,
     ) -> Result<()> {
+        let GuiFrameResources {
+            textures_delta,
+            screen_descriptor,
+            paint_jobs,
+        } = gui_frame_resources;
         self.gui
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
-        self.scene.update(projection, view, &self.queue);
-        Ok(())
+        self.world_render
+            .update(&self.queue, world, self.aspect_ratio())
+            .map_err(RendererError::UpdateWorld)
     }
 
     pub fn resize(&mut self, dimensions: [u32; 2]) {
@@ -126,10 +156,17 @@ impl Renderer {
         self.config.width = dimensions[0];
         self.config.height = dimensions[1];
         self.surface.configure(&self.device, &self.config);
+        self.depth_texture = Texture::create_depth_texture(
+            &self.device,
+            dimensions[0],
+            dimensions[1],
+            "Depth Texture",
+        );
     }
 
     pub fn render_frame(
         &mut self,
+        world: &mut World,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
     ) -> Result<()> {
@@ -165,10 +202,17 @@ impl Renderer {
                         store: true,
                     },
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_texture.view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
             });
 
-            self.scene.render(&mut renderpass);
+            self.world_render.render(&mut renderpass, world).unwrap();
         }
 
         self.gui

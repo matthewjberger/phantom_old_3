@@ -2,7 +2,7 @@ use crate::{
     AlphaMode, Animation, BoundingBox, Camera, Channel, Ecs, Entity, Filter, Format, Geometry,
     Interpolation, Joint, Light, LightKind, Material, Mesh, MeshRender, MorphTarget, Name,
     OrthographicCamera, PerspectiveCamera, Primitive, Projection, Sampler, Scene, SceneGraph, Skin,
-    Texture, Transform, TransformationSet, Vertex, World, WrappingMode,
+    Texture, TextureError, Transform, TransformationSet, Vertex, World, WrappingMode,
 };
 use phantom_dependencies::{
     glm,
@@ -44,6 +44,9 @@ pub enum GltfError {
 
     #[error("Failed to get transform!")]
     GetComponent(#[from] ComponentError),
+
+    #[error("Failed to create texture!")]
+    CreateTexture(#[from] TextureError),
 }
 
 type Result<T, E = GltfError> = std::result::Result<T, E>;
@@ -209,13 +212,14 @@ fn load_textures(gltf: &gltf::Document, images: &[gltf::image::Data]) -> Result<
         let image_index = texture.source().index();
         let image = images.get(image_index).ok_or(GltfError::LookupImage)?;
 
-        let texture = Texture {
-            pixels: image.pixels.to_vec(),
-            format: map_gltf_format(image.format),
-            width: image.width,
-            height: image.height,
+        let texture = Texture::new(
+            image.pixels.to_vec(),
+            map_gltf_format(image.format),
+            image.width,
+            image.height,
             sampler,
-        };
+        )
+        .map_err(GltfError::CreateTexture)?;
         textures.push(texture);
     }
     Ok(textures)

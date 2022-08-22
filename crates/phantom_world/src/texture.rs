@@ -1,7 +1,7 @@
 use phantom_dependencies::{
     image::{
         codecs::hdr::HdrDecoder, io::Reader as ImageReader, DynamicImage, GenericImageView,
-        ImageError,
+        ImageBuffer, ImageError, Pixel, RgbImage,
     },
     nalgebra_glm as glm,
     serde::{Deserialize, Serialize},
@@ -28,6 +28,9 @@ pub enum TextureError {
 
     #[error("Failed to map texture format to world texture format!")]
     MapFormat,
+
+    #[error("Failed to create image buffer from raw pixel data!")]
+    CreateImageBuffer,
 }
 
 type Result<T, E = TextureError> = std::result::Result<T, E>;
@@ -44,6 +47,24 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn new(
+        pixels: Vec<u8>,
+        format: Format,
+        width: u32,
+        height: u32,
+        sampler: Sampler,
+    ) -> Result<Self> {
+        let mut texture = Self {
+            pixels,
+            format,
+            width,
+            height,
+            sampler,
+        };
+        texture.convert_24bit_formats()?;
+        Ok(texture)
+    }
+
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let image = ImageReader::open(path)
             .map_err(TextureError::LoadImageFromFile)?
@@ -53,24 +74,43 @@ impl Texture {
         let format = Self::map_format(&image)?;
         let pixels = image.into_bytes();
 
-        Ok(Self {
-            pixels,
-            format,
-            width,
-            height,
-            sampler: Sampler::default(),
-        })
+        Self::new(pixels, format, width, height, Sampler::default())
     }
 
     pub fn map_format(image: &DynamicImage) -> Result<Format> {
-        // TODO: Convert 24bit format to 32bit by adding an alpha channel
         Ok(match image {
             DynamicImage::ImageRgb8(_) => Format::R8G8B8,
             DynamicImage::ImageRgba8(_) => Format::R8G8B8A8,
             DynamicImage::ImageRgb16(_) => Format::R16G16B16,
             DynamicImage::ImageRgba16(_) => Format::R16G16B16A16,
+            DynamicImage::ImageRgba32F(_) => Format::R32G32B32A32F,
             _ => return Err(TextureError::MapFormat),
         })
+    }
+
+    fn convert_24bit_formats(&mut self) -> Result<()> {
+        // 24-bit formats are unsupported, so they
+        // need to have an alpha channel added to make them 32-bit
+        let format = match self.format {
+            Format::R8G8B8 => Format::R8G8B8A8,
+            Format::B8G8R8 => Format::B8G8R8A8,
+            _ => return Ok(()),
+        };
+        self.format = format;
+        self.attach_alpha_channel()
+    }
+
+    fn attach_alpha_channel(&mut self) -> Result<()> {
+        let image_buffer: RgbImage =
+            ImageBuffer::from_raw(self.width, self.height, self.pixels.to_vec())
+                .ok_or(TextureError::CreateImageBuffer)?;
+
+        self.pixels = image_buffer
+            .pixels()
+            .flat_map(|pixel| pixel.to_rgba().channels().to_vec())
+            .collect::<Vec<_>>();
+
+        Ok(())
     }
 
     pub fn from_hdr(path: impl AsRef<Path>) -> Result<Self> {

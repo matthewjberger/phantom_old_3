@@ -17,7 +17,7 @@ use phantom_dependencies::{
     },
 };
 use phantom_gui::Gui;
-use phantom_render::Renderer;
+use phantom_render::{Renderer, RendererError};
 use phantom_world::{load_gltf, GltfError, World, WorldError};
 
 #[derive(Error, Debug)]
@@ -36,6 +36,9 @@ pub enum ResourceError {
 
     #[error("Failed to load gltf asset!")]
     LoadGltfAsset(#[source] GltfError),
+
+    #[error("Failed to sync renderer with world!")]
+    SyncRenderer(#[source] RendererError),
 }
 
 type Result<T, E = ResourceError> = std::result::Result<T, E>;
@@ -78,14 +81,16 @@ impl<'a> Resources<'a> {
 
     pub fn load_map(&mut self, path: impl AsRef<Path>) -> Result<()> {
         self.world.reload(path).map_err(ResourceError::LoadMap)?;
-        // TODO: Update renderer here
-        Ok(())
+        self.renderer
+            .sync_world(&self.world)
+            .map_err(ResourceError::SyncRenderer)
     }
 
     pub fn load_gltf_asset(&mut self, path: impl AsRef<Path>) -> Result<()> {
         load_gltf(path, &mut self.world).map_err(ResourceError::LoadGltfAsset)?;
-        // TODO: Update renderer here
         log::info!("Loaded gltf asset");
-        Ok(())
+        self.renderer
+            .sync_world(&self.world)
+            .map_err(ResourceError::SyncRenderer)
     }
 }

@@ -15,7 +15,7 @@ use phantom_dependencies::{
         window::{Fullscreen, Icon, WindowBuilder},
     },
 };
-use phantom_gui::Gui;
+use phantom_gui::{Gui, GuiFrameResources};
 use phantom_render::{Renderer, RendererError, Viewport};
 use phantom_world::{World, WorldError};
 use std::io;
@@ -63,9 +63,6 @@ pub enum ApplicationError {
 
     #[error("Failed to to update the gui!")]
     UpdateGui(#[source] Box<dyn std::error::Error>),
-
-    #[error("Failed to to update the gui!")]
-    GetActiveCameraMatrices(#[source] WorldError),
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
@@ -227,24 +224,19 @@ fn run_loop(
                 .update(&mut resources)
                 .map_err(ApplicationError::UpdateStateMachine)?;
 
-            let (projection, view) = resources
-                .world
-                .active_camera_matrices(resources.renderer.aspect_ratio())
-                .map_err(ApplicationError::GetActiveCameraMatrices)?;
+            let mut gui_frame_resources = GuiFrameResources {
+                textures_delta: &textures_delta,
+                screen_descriptor: &screen_descriptor,
+                paint_jobs: &paint_jobs,
+            };
 
             resources
                 .renderer
-                .update(
-                    projection,
-                    view,
-                    &textures_delta,
-                    &screen_descriptor,
-                    &paint_jobs,
-                )
+                .update(&mut resources.world, &mut gui_frame_resources)
                 .map_err(ApplicationError::UpdateRenderer)?;
             resources
                 .renderer
-                .render_frame(&paint_jobs, &screen_descriptor)
+                .render_frame(&mut resources.world, &paint_jobs, &screen_descriptor)
                 .map_err(ApplicationError::RenderFrame)?;
         }
 
