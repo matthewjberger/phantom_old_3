@@ -1,8 +1,8 @@
 use super::{
     gui::GuiRender,
-    renderer::Renderer,
     world::{render::WorldRender, texture::Texture},
 };
+use crate::Renderer;
 use phantom_dependencies::{
     anyhow,
     egui::ClippedPrimitive,

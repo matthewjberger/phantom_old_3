@@ -1,10 +1,11 @@
-use super::wgpu::WgpuRenderer;
 use phantom_dependencies::{
     egui::ClippedPrimitive, egui_wgpu::renderer::ScreenDescriptor,
     raw_window_handle::HasRawWindowHandle,
 };
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
+
+use crate::backend::WgpuRenderer;
 
 pub enum Backend {
     // TODO: Route specific backends through here
