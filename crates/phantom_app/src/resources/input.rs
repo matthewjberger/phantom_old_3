@@ -62,6 +62,7 @@ impl Input {
 #[derive(Default)]
 pub struct Mouse {
     pub is_left_clicked: bool,
+    pub is_middle_clicked: bool,
     pub is_right_clicked: bool,
     pub position: glm::Vec2,
     pub position_delta: glm::Vec2,
@@ -120,6 +121,7 @@ impl Mouse {
         let clicked = state == ElementState::Pressed;
         match button {
             MouseButton::Left => self.is_left_clicked = clicked,
+            MouseButton::Middle => self.is_middle_clicked = clicked,
             MouseButton::Right => self.is_right_clicked = clicked,
             _ => {}
         }

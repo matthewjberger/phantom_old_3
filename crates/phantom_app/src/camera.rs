@@ -50,8 +50,9 @@ impl MouseOrbit {
         {
             let mut entry = resources.world.ecs.entry_mut(entity)?;
             let mut transform = entry.get_component_mut::<Transform>()?;
-            if resources.input.mouse.is_right_clicked
-                && resources.input.is_key_pressed(VirtualKeyCode::LShift)
+            if resources.input.mouse.is_middle_clicked
+                || (resources.input.mouse.is_right_clicked
+                    && resources.input.is_key_pressed(VirtualKeyCode::LShift))
             {
                 self.orientation.pan(&mouse_delta)
             }
