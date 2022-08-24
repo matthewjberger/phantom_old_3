@@ -16,8 +16,8 @@ use phantom_dependencies::{
     },
 };
 use phantom_gui::{Gui, GuiFrameResources};
-use phantom_render::{Renderer, RendererError, Viewport};
-use phantom_world::{World, WorldError};
+use phantom_render::{create_renderer, Backend};
+use phantom_world::{Viewport, World, WorldError};
 use std::io;
 
 #[derive(Error, Debug)]
@@ -32,7 +32,7 @@ pub enum ApplicationError {
     CreateWorld(#[source] WorldError),
 
     #[error("Failed to create the renderer!")]
-    CreateRenderer(#[source] RendererError),
+    CreateRenderer(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to decode icon file at path: {1}")]
     DecodeIconFile(#[source] image::ImageError, String),
@@ -47,7 +47,7 @@ pub enum ApplicationError {
     OpenIconFile(#[source] io::Error, String),
 
     #[error("Failed to render a frame!")]
-    RenderFrame(#[source] RendererError),
+    RenderFrame(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to start the state machine!")]
     StartStateMachine(#[source] Box<dyn std::error::Error>),
@@ -56,13 +56,16 @@ pub enum ApplicationError {
     StopStateMachine(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to update the renderer!")]
-    UpdateRenderer(#[source] RendererError),
+    UpdateRenderer(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to update the state machine!")]
     UpdateStateMachine(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to to update the gui!")]
     UpdateGui(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to to resize the renderer!")]
+    ResizeRenderer(#[source] Box<dyn std::error::Error>),
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
@@ -126,11 +129,12 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     let mut input = Input::default();
     let mut system = System::new(window_dimensions);
 
-    let mut renderer = Renderer::new(
+    let mut renderer = create_renderer(
+        &Backend::Wgpu,
         &window,
         &Viewport {
-            width: config.width,
-            height: config.height,
+            width: config.width as _,
+            height: config.height as _,
             ..Default::default()
         },
     )
@@ -273,7 +277,8 @@ fn run_loop(
             WindowEvent::Resized(physical_size) => {
                 resources
                     .renderer
-                    .resize([physical_size.width, physical_size.height]);
+                    .resize([physical_size.width, physical_size.height])
+                    .map_err(ApplicationError::ResizeRenderer)?;
                 state_machine
                     .on_resize(&mut resources, physical_size)
                     .map_err(ApplicationError::HandleEvent)?;

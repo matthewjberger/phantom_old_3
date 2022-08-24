@@ -281,10 +281,6 @@ impl TextureBinding {
         }
     }
 
-    pub fn clear_textures(&mut self) {
-        self.bind_groups.clear()
-    }
-
     pub fn upload_textures(&mut self, device: &wgpu::Device, textures: &[Texture], offset: usize) {
         textures.iter().skip(offset).for_each(|texture| {
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

@@ -17,7 +17,7 @@ use phantom_dependencies::{
     },
 };
 use phantom_gui::Gui;
-use phantom_render::{Renderer, RendererError};
+use phantom_render::Renderer;
 use phantom_world::{load_gltf, GltfError, World, WorldError};
 
 #[derive(Error, Debug)]
@@ -38,13 +38,13 @@ pub enum ResourceError {
     LoadGltfAsset(#[source] GltfError),
 
     #[error("Failed to sync renderer with world!")]
-    SyncRenderer(#[source] RendererError),
+    SyncRenderer(#[source] Box<dyn std::error::Error>),
 }
 
 type Result<T, E = ResourceError> = std::result::Result<T, E>;
 
 pub struct Resources<'a> {
-    pub renderer: &'a mut Renderer,
+    pub renderer: &'a mut Box<dyn Renderer>,
     pub world: &'a mut World,
     pub window: &'a mut Window,
     pub gui: &'a mut Gui,

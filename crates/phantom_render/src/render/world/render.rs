@@ -185,10 +185,6 @@ impl WorldRender {
 
         Ok(())
     }
-
-    pub fn clear_textures(&mut self) {
-        self.render.clear_textures();
-    }
 }
 
 struct Render {
@@ -361,11 +357,6 @@ impl Render {
             ))?;
         render_pass.set_bind_group(Self::DIFFUSE_TEXTURE_BIND_GROUP_INDEX, &bind_group, &[]);
         Ok(())
-    }
-
-    pub fn clear_textures(&mut self) {
-        self.textures.clear();
-        self.diffuse_texture_binding.clear_textures();
     }
 
     pub fn upload_textures(
