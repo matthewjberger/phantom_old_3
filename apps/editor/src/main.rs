@@ -1,5 +1,8 @@
 use editor::Editor;
-use phantom::app::{run, AppConfig, ApplicationError};
+use phantom::{
+    app::{run, AppConfig, ApplicationError},
+    render::Backend,
+};
 
 mod editor;
 
@@ -8,6 +11,7 @@ fn main() -> Result<(), ApplicationError> {
         Editor::default(),
         AppConfig {
             icon: Some("assets/icons/phantom.png".to_string()),
+            render_backend: Backend::OpenGL,
             ..Default::default()
         },
     )

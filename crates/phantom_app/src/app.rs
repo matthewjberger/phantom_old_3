@@ -76,6 +76,7 @@ pub struct AppConfig {
     pub is_fullscreen: bool,
     pub title: String,
     pub icon: Option<String>,
+    pub render_backend: Backend,
 }
 
 impl Default for AppConfig {
@@ -86,6 +87,7 @@ impl Default for AppConfig {
             is_fullscreen: false,
             title: "Phantom Editor".to_string(),
             icon: None,
+            render_backend: Backend::Wgpu,
         }
     }
 }
@@ -130,7 +132,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     let mut system = System::new(window_dimensions);
 
     let mut renderer = create_renderer(
-        &Backend::Wgpu,
+        &config.render_backend,
         &window,
         &Viewport {
             width: config.width as _,

@@ -5,12 +5,12 @@ use phantom_dependencies::{
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
 
-use crate::backend::WgpuRenderer;
+use crate::backend::{OpenGlRenderer, WgpuRenderer};
 
 pub enum Backend {
     // TODO: Route specific backends through here
     Wgpu,
-    // OpenGl,
+    OpenGL,
 }
 
 pub trait Renderer {
@@ -37,6 +37,10 @@ pub fn create_renderer(
     match backend {
         Backend::Wgpu => {
             let backend = WgpuRenderer::new(window_handle, viewport)?;
+            Ok(Box::new(backend) as Box<dyn Renderer>)
+        }
+        Backend::OpenGL => {
+            let backend = OpenGlRenderer::new(window_handle, viewport)?;
             Ok(Box::new(backend) as Box<dyn Renderer>)
         }
     }
