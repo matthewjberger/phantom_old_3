@@ -2,7 +2,7 @@ use super::{
     gui::GuiRender,
     world::{render::WorldRender, texture::Texture},
 };
-use crate::Renderer;
+use crate::{Backend, Renderer};
 use phantom_dependencies::{
     anyhow,
     egui::ClippedPrimitive,
@@ -12,8 +12,8 @@ use phantom_dependencies::{
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
     wgpu::{
-        self, Device, Queue, RequestDeviceError, Surface, SurfaceConfiguration, SurfaceError,
-        TextureViewDescriptor,
+        self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
+        SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
     },
     winit::window::Window,
 };
@@ -39,6 +39,9 @@ pub enum RendererError {
 
     #[error("Failed to update world!")]
     UpdateWorld(#[source] anyhow::Error),
+
+    #[error("The requested backend isn't supported by WGPU: `0`")]
+    MapRendererBackend(Backend),
 }
 
 type Result<T, E = RendererError> = std::result::Result<T, E>;
@@ -169,19 +172,26 @@ impl Renderer for WgpuRenderer {
 }
 
 impl WgpuRenderer {
-    pub fn new(window_handle: &impl HasRawWindowHandle, viewport: &Viewport) -> Result<Self> {
-        pollster::block_on(WgpuRenderer::new_async(window_handle, viewport))
+    pub fn new(
+        window_handle: &impl HasRawWindowHandle,
+        backend: &Backend,
+        viewport: &Viewport,
+    ) -> Result<Self> {
+        pollster::block_on(WgpuRenderer::new_async(window_handle, backend, viewport))
     }
 
     async fn new_async(
         window_handle: &impl HasRawWindowHandle,
+        backend: &Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
-        let instance = wgpu::Instance::new(Self::backends());
+        let backend: Backends = map_backend(backend)?.into();
+
+        let instance = wgpu::Instance::new(backend);
 
         let surface = unsafe { instance.create_surface(window_handle) };
 
-        let adapter = Self::create_adapter(&instance, &surface).await?;
+        let adapter = Self::create_adapter(&instance, &surface, backend).await?;
 
         let (device, queue) = Self::request_device(&adapter).await?;
 
@@ -225,10 +235,6 @@ impl WgpuRenderer {
         self.config.width as f32 / std::cmp::max(1, self.config.height) as f32
     }
 
-    fn backends() -> wgpu::Backends {
-        wgpu::util::backend_bits_from_env().unwrap_or_else(wgpu::Backends::all)
-    }
-
     fn required_limits(adapter: &wgpu::Adapter) -> wgpu::Limits {
         wgpu::Limits::default()
             // Use the texture resolution limits from the adapter
@@ -247,14 +253,11 @@ impl WgpuRenderer {
     async fn create_adapter(
         instance: &wgpu::Instance,
         surface: &wgpu::Surface,
+        backend: Backends,
     ) -> Result<wgpu::Adapter> {
-        wgpu::util::initialize_adapter_from_env_or_default(
-            instance,
-            Self::backends(),
-            Some(surface),
-        )
-        .await
-        .ok_or(RendererError::NoSuitableGpuAdapters)
+        wgpu::util::initialize_adapter_from_env_or_default(instance, backend, Some(surface))
+            .await
+            .ok_or(RendererError::NoSuitableGpuAdapters)
     }
 
     async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue)> {
@@ -273,4 +276,15 @@ impl WgpuRenderer {
             .await
             .map_err(RendererError::RequestDevice)
     }
+}
+
+fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
+    let backend = match backend {
+        Backend::Dx11 => WgpuBackend::Dx11,
+        Backend::Dx12 => WgpuBackend::Dx12,
+        Backend::Metal => WgpuBackend::Metal,
+        Backend::Vulkan => WgpuBackend::Vulkan,
+        unsupported_backend => return Err(RendererError::MapRendererBackend(*unsupported_backend)),
+    };
+    Ok(backend)
 }

@@ -8,10 +8,13 @@ use phantom_dependencies::{
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
 
+#[derive(Debug, Copy, Clone)]
 pub enum Backend {
-    // TODO: Route specific backends through here
-    Wgpu,
+    Dx11,
+    Dx12,
+    Metal,
     OpenGL,
+    Vulkan,
 }
 
 pub trait Renderer {
@@ -41,13 +44,13 @@ pub fn create_renderer(
     viewport: &Viewport,
 ) -> Result<Box<dyn Renderer>, Box<dyn std::error::Error>> {
     match backend {
-        Backend::Wgpu => {
-            let window_handle = context.window();
-            let backend = WgpuRenderer::new(window_handle, viewport)?;
-            Ok(Box::new(backend) as Box<dyn Renderer>)
-        }
         Backend::OpenGL => {
             let backend = OpenGlRenderer::new(context, viewport)?;
+            Ok(Box::new(backend) as Box<dyn Renderer>)
+        }
+        backend => {
+            let window_handle = context.window();
+            let backend = WgpuRenderer::new(window_handle, backend, viewport)?;
             Ok(Box::new(backend) as Box<dyn Renderer>)
         }
     }

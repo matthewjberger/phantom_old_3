@@ -88,7 +88,7 @@ impl Default for AppConfig {
             is_fullscreen: false,
             title: "Phantom Editor".to_string(),
             icon: None,
-            render_backend: Backend::Wgpu,
+            render_backend: Backend::OpenGL,
         }
     }
 }
