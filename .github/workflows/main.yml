@@ -1,6 +1,6 @@
 on: 
   pull_request:
-    branches: [main]
+    branches: [develop]
 
 name: Phantom CI
 
