@@ -1,6 +1,6 @@
 use phantom_dependencies::{
     gl::{self, types::GLvoid},
-    image::{self, DynamicImage::*, GenericImageView},
+    image::{self, DynamicImage::*},
 };
 use std::ptr;
 

@@ -559,15 +559,15 @@ impl World {
     }
 
     pub fn as_bytes(&self) -> Result<Vec<u8>> {
-        Ok(world_as_bytes(&self).map_err(WorldError::SerializeWorld)?)
+        world_as_bytes(self).map_err(WorldError::SerializeWorld)
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<World> {
-        Ok(world_from_bytes(bytes).map_err(WorldError::DeserializeWorld)?)
+        world_from_bytes(bytes).map_err(WorldError::DeserializeWorld)
     }
 
     pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
-        Ok(std::fs::write(path, &self.as_bytes()?).map_err(WorldError::SaveWorldToFile)?)
+        std::fs::write(path, &self.as_bytes()?).map_err(WorldError::SaveWorldToFile)
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
@@ -591,7 +591,7 @@ impl World {
         let rigid_body = entry.get_component::<RigidBody>()?;
         let transform = entry.get_component::<Transform>()?;
         if let Some(body) = self.physics.bodies.get_mut(rigid_body.handle) {
-            let mut position = body.position().clone();
+            let mut position = *body.position();
             position.translation.vector = transform.translation;
             body.set_position(position, true);
         }

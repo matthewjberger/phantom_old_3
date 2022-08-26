@@ -14,11 +14,11 @@ impl GeometryBuffer {
         vertex_attributes: &[usize],
     ) -> Self {
         let vao = Self::create_vao();
-        let vbo = Self::create_buffer(&vertices, gl::ARRAY_BUFFER);
+        let vbo = Self::create_buffer(vertices, gl::ARRAY_BUFFER);
 
         let mut ebo = None;
         if let Some(indices) = indices {
-            ebo = Some(Self::create_buffer(&indices, gl::ELEMENT_ARRAY_BUFFER));
+            ebo = Some(Self::create_buffer(indices, gl::ELEMENT_ARRAY_BUFFER));
         }
 
         Self::add_vertex_attributes::<T>(vertex_attributes);

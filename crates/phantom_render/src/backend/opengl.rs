@@ -1,5 +1,6 @@
+#![allow(dead_code)]
+
 mod buffer;
-mod context;
 mod renderer;
 mod shader;
 mod texture;

@@ -90,9 +90,6 @@ impl WorldPhysics {
     pub fn update(&mut self, delta_time: f32) {
         self.integration_parameters.dt = delta_time;
 
-        // We ignore contact events for now.
-        let event_handler = ();
-
         self.pipeline.step(
             &self.gravity,
             &self.integration_parameters,
@@ -105,7 +102,8 @@ impl WorldPhysics {
             &mut self.multibody_joints,
             &mut self.ccd_solver,
             &(),
-            &event_handler,
+            // Ignore contact events
+            &(),
         );
 
         self.query_pipeline

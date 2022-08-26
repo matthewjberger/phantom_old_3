@@ -1,6 +1,6 @@
 use super::{buffer::GeometryBuffer, shader::ShaderProgram, texture::Texture};
 use phantom_dependencies::{
-    anyhow::{bail, Context, Result},
+    anyhow::{Context, Result},
     gl,
     legion::EntityStore,
     nalgebra_glm as glm,
@@ -64,7 +64,7 @@ pub struct WorldRender {
 }
 
 impl WorldRender {
-    const VERTEX_SHADER_SOURCE: &'static str = &r#"
+    const VERTEX_SHADER_SOURCE: &'static str = r#"
 #version 450 core
 
 layout (location = 0) in vec3 inPosition;
@@ -94,7 +94,7 @@ void main()
 }
 "#;
 
-    const FRAGMENT_SHADER_SOURCE: &'static str = &r#"
+    const FRAGMENT_SHADER_SOURCE: &'static str = r#"
 #version 450 core
 struct Light
 {

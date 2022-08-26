@@ -1,5 +1,5 @@
-use std::sync::Arc;
-
+use super::world::WorldRender;
+use crate::Renderer;
 use phantom_dependencies::{
     anyhow::Result,
     egui::ClippedPrimitive,
@@ -7,26 +7,22 @@ use phantom_dependencies::{
     egui_wgpu::renderer::ScreenDescriptor,
     gl,
     glutin::{window::Window, ContextWrapper, PossiblyCurrent},
-    raw_window_handle::HasRawWindowHandle,
-    winit::dpi::PhysicalSize,
 };
 use phantom_world::{Viewport, World};
-
-use crate::Renderer;
-
-use super::{context::load_context, world::WorldRender};
+use std::sync::Arc;
 
 pub struct OpenGlRenderer {
     world_render: Option<WorldRender>,
     viewport: Viewport,
-    context: ContextWrapper<PossiblyCurrent, ()>,
     glow_context: Arc<glow::Context>,
     gui_painter: Painter,
 }
 
 impl OpenGlRenderer {
-    pub fn new(window_handle: &impl HasRawWindowHandle, viewport: &Viewport) -> Result<Self> {
-        let context = unsafe { load_context(window_handle)? };
+    pub fn new(
+        context: &ContextWrapper<PossiblyCurrent, Window>,
+        viewport: &Viewport,
+    ) -> Result<Self> {
         gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
 
         let glow_context = unsafe {
@@ -38,7 +34,6 @@ impl OpenGlRenderer {
         Ok(Self {
             world_render: None,
             viewport: *viewport,
-            context,
             glow_context,
             gui_painter,
         })
@@ -51,7 +46,11 @@ impl Renderer for OpenGlRenderer {
         Ok(())
     }
 
-    fn resize(&mut self, dimensions: [u32; 2]) -> Result<(), Box<dyn std::error::Error>> {
+    fn resize(
+        &mut self,
+        dimensions: [u32; 2],
+        context: &ContextWrapper<PossiblyCurrent, Window>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.viewport = Viewport {
             x: 0.0,
             y: 0.0,
@@ -66,18 +65,18 @@ impl Renderer for OpenGlRenderer {
                 self.viewport.height as _,
             );
         }
-        self.context.resize(dimensions.into());
+        context.resize(dimensions.into());
         Ok(())
     }
 
     fn update(
         &mut self,
-        world: &mut World,
+        _world: &mut World,
         gui_frame_resources: &mut phantom_gui::GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let textures_delta = gui_frame_resources.textures_delta;
         for (id, image_delta) in textures_delta.set.iter() {
-            self.gui_painter.set_texture(*id, &image_delta);
+            self.gui_painter.set_texture(*id, image_delta);
         }
         Ok(())
     }
@@ -87,6 +86,7 @@ impl Renderer for OpenGlRenderer {
         world: &mut World,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
+        context: &ContextWrapper<PossiblyCurrent, Window>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
@@ -107,10 +107,10 @@ impl Renderer for OpenGlRenderer {
         self.gui_painter.paint_primitives(
             screen_descriptor.size_in_pixels,
             screen_descriptor.pixels_per_point,
-            &paint_jobs,
+            paint_jobs,
         );
 
-        self.context.swap_buffers()?;
+        context.swap_buffers()?;
 
         Ok(())
     }

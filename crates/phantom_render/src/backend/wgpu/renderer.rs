@@ -7,6 +7,7 @@ use phantom_dependencies::{
     anyhow,
     egui::ClippedPrimitive,
     egui_wgpu::renderer::ScreenDescriptor,
+    glutin::{ContextWrapper, PossiblyCurrent},
     log, pollster,
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
@@ -14,6 +15,7 @@ use phantom_dependencies::{
         self, Device, Queue, RequestDeviceError, Surface, SurfaceConfiguration, SurfaceError,
         TextureViewDescriptor,
     },
+    winit::window::Window,
 };
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
@@ -59,7 +61,11 @@ impl Renderer for WgpuRenderer {
         Ok(())
     }
 
-    fn resize(&mut self, dimensions: [u32; 2]) -> Result<(), Box<dyn std::error::Error>> {
+    fn resize(
+        &mut self,
+        dimensions: [u32; 2],
+        _context: &ContextWrapper<PossiblyCurrent, Window>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         log::info!(
             "Resizing renderer surface to: ({}, {})",
             dimensions[0],
@@ -105,6 +111,7 @@ impl Renderer for WgpuRenderer {
         world: &mut World,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
+        _context: &ContextWrapper<PossiblyCurrent, Window>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let surface_texture = self
             .surface

@@ -355,7 +355,7 @@ impl Render {
                 "Failed to find texture bind group at index {}",
                 texture_offset,
             ))?;
-        render_pass.set_bind_group(Self::DIFFUSE_TEXTURE_BIND_GROUP_INDEX, &bind_group, &[]);
+        render_pass.set_bind_group(Self::DIFFUSE_TEXTURE_BIND_GROUP_INDEX, bind_group, &[]);
         Ok(())
     }
 
