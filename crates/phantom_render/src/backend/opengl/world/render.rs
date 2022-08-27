@@ -1,5 +1,9 @@
 use super::pbr::PbrShader;
-use crate::backend::opengl::{buffer::GeometryBuffer, texture::Texture};
+use crate::backend::opengl::{
+    buffer::GeometryBuffer,
+    graphics::{BlendFunction, CullMode, DepthTestFunction, FrontFace, Graphics},
+    texture::Texture,
+};
 use phantom_dependencies::{anyhow::Result, gl, legion::EntityStore, petgraph::graph::NodeIndex};
 use phantom_world::{AlphaMode, Format, Material, MeshRender, SceneGraph, World};
 use std::ptr;
@@ -72,14 +76,8 @@ impl WorldRender {
     }
 
     pub fn render(&self, world: &World, aspect_ratio: f32) -> Result<()> {
-        unsafe {
-            gl::Enable(gl::CULL_FACE);
-            gl::CullFace(gl::BACK);
-            gl::FrontFace(gl::CCW);
-
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LEQUAL);
-        }
+        Graphics::enable_culling(CullMode::Back, FrontFace::CounterClockwise);
+        Graphics::enable_depth_testing(DepthTestFunction::LessThanOrEqualTo);
 
         self.geometry.bind();
         self.pbr_shader.update(world, aspect_ratio)?;
@@ -117,13 +115,11 @@ impl WorldRender {
             Ok(mesh_render) => {
                 if let Some(mesh) = world.geometry.meshes.get(&mesh_render.name) {
                     match alpha_mode {
-                        AlphaMode::Opaque | AlphaMode::Mask => unsafe {
-                            gl::Disable(gl::BLEND);
-                        },
-                        AlphaMode::Blend => unsafe {
-                            gl::Enable(gl::BLEND);
-                            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-                        },
+                        AlphaMode::Opaque | AlphaMode::Mask => Graphics::disable_blending(),
+                        AlphaMode::Blend => Graphics::enable_blending(
+                            BlendFunction::SourceAlpha,
+                            BlendFunction::OneMinusSourceAlpha,
+                        ),
                     }
 
                     for primitive in mesh.primitives.iter() {
