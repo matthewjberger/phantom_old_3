@@ -1,4 +1,4 @@
-use super::world::WorldRender;
+use super::{graphics::Graphics, world::WorldRender};
 use crate::Renderer;
 use phantom_dependencies::{
     anyhow::Result,
@@ -7,6 +7,7 @@ use phantom_dependencies::{
     egui_wgpu::renderer::ScreenDescriptor,
     gl,
     glutin::{window::Window, ContextWrapper, PossiblyCurrent},
+    nalgebra_glm as glm,
 };
 use phantom_world::{Viewport, World};
 use std::sync::Arc;
@@ -88,17 +89,8 @@ impl Renderer for OpenGlRenderer {
         screen_descriptor: &ScreenDescriptor,
         context: &ContextWrapper<PossiblyCurrent, Window>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
-            gl::ClearColor(0.3, 0.3, 0.3, 1.0);
-
-            gl::Enable(gl::CULL_FACE);
-            gl::CullFace(gl::BACK);
-            gl::FrontFace(gl::CCW);
-
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LEQUAL);
-        }
+        Graphics::clear_buffers();
+        Graphics::clear_color(&glm::vec3(0.3, 0.3, 0.3));
 
         if let Some(world_render) = self.world_render.as_ref() {
             world_render.render(world, self.viewport.aspect_ratio())?;
@@ -115,15 +107,3 @@ impl Renderer for OpenGlRenderer {
         Ok(())
     }
 }
-
-//     fn set_viewport(&mut self, viewport: Viewport) {
-//         unsafe {
-//             gl::Viewport(
-//                 viewport.x as _,
-//                 viewport.y as _,
-//                 viewport.width as _,
-//                 viewport.height as _,
-//             );
-//         }
-//         self.viewport = viewport;
-//     }

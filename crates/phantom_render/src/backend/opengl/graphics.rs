@@ -1,4 +1,7 @@
-use phantom_dependencies::gl::{self, types::GLuint};
+use phantom_dependencies::{
+    gl::{self, types::GLuint},
+    nalgebra_glm as glm,
+};
 
 pub enum CullMode {
     Front,
@@ -166,6 +169,18 @@ impl Graphics {
     pub fn disable_blending() {
         unsafe {
             gl::Disable(gl::BLEND);
+        }
+    }
+
+    pub fn clear_buffers() {
+        unsafe {
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
+        }
+    }
+
+    pub fn clear_color(color: &glm::Vec3) {
+        unsafe {
+            gl::ClearColor(color.x, color.y, color.z, 1.0);
         }
     }
 }
