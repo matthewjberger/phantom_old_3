@@ -1,7 +1,54 @@
 use super::WorldShader;
 use crate::backend::opengl::{shader::ShaderProgram, texture::Texture};
 use phantom_dependencies::{anyhow::Result, nalgebra_glm as glm};
-use phantom_world::{Material, World};
+use phantom_world::{LightKind, Material, Transform, World};
+
+#[derive(Default, Debug, Copy, Clone)]
+pub struct Light {
+    ambient: glm::Vec3,
+    constant: f32,
+    cutoff: f32,
+    diffuse: glm::Vec3,
+    direction: glm::Vec3,
+    linear: f32,
+    outer_cutoff: f32,
+    position: glm::Vec3,
+    quadratic: f32,
+    specular: glm::Vec3,
+    kind: i32,
+}
+
+impl Light {
+    pub fn from_node(transform: &Transform, light: &phantom_world::BlinnPhongLight) -> Self {
+        let mut inner_cone_cos: f32 = 0.0;
+        let mut outer_cone_cos: f32 = 0.0;
+        let kind = match light.kind {
+            LightKind::Directional => 0,
+            LightKind::Point => 1,
+            LightKind::Spot {
+                inner_cone_angle,
+                outer_cone_angle,
+            } => {
+                inner_cone_cos = inner_cone_angle;
+                outer_cone_cos = outer_cone_angle;
+                2
+            }
+        };
+        Self {
+            ambient: light.ambient,
+            constant: light.constant,
+            diffuse: light.diffuse,
+            direction: -1.0 * glm::quat_rotate_vec3(&transform.rotation, &glm::Vec3::z()),
+            linear: light.linear,
+            position: transform.translation,
+            quadratic: light.quadratic,
+            specular: light.specular,
+            kind,
+            cutoff: inner_cone_cos,
+            outer_cutoff: outer_cone_cos,
+        }
+    }
+}
 
 pub struct BlinnPhongShader {
     shader_program: ShaderProgram,
@@ -27,6 +74,42 @@ impl BlinnPhongShader {
             .set_uniform_matrix4x4("projection", projection.as_slice());
         self.shader_program
             .set_uniform_matrix4x4("view", view.as_slice());
+        Ok(())
+    }
+    fn upload_lights(&self, world: &World) -> Result<()> {
+        let world_lights = world
+            .components::<phantom_world::BlinnPhongLight>()
+            .unwrap()
+            .iter()
+            .map(|(transform, light)| Light::from_node(transform, light))
+            .collect::<Vec<_>>();
+        for (index, light) in world_lights.iter().enumerate() {
+            let name = |key: &str| format!("lights[{}].{}", index, key);
+            self.shader_program
+                .set_uniform_vec3(&name("ambient"), light.ambient.as_slice());
+            self.shader_program
+                .set_uniform_float(&name("constant"), light.constant);
+            self.shader_program
+                .set_uniform_float(&name("cutoff"), light.cutoff);
+            self.shader_program
+                .set_uniform_vec3(&name("diffuse"), light.diffuse.as_slice());
+            self.shader_program
+                .set_uniform_vec3(&name("direction"), light.direction.as_slice());
+            self.shader_program
+                .set_uniform_float(&name("linear"), light.linear);
+            self.shader_program
+                .set_uniform_float(&name("outer_cutoff"), light.outer_cutoff);
+            self.shader_program
+                .set_uniform_vec3(&name("position"), light.position.as_slice());
+            self.shader_program
+                .set_uniform_float(&name("quadratic"), light.quadratic);
+            self.shader_program
+                .set_uniform_vec3(&name("specular"), light.specular.as_slice());
+            self.shader_program
+                .set_uniform_int(&name("kind"), light.kind);
+        }
+        self.shader_program
+            .set_uniform_int("numberOfLights", world_lights.len() as _);
         Ok(())
     }
 }
@@ -130,6 +213,25 @@ uniform sampler2D NormalTexture;
 
 uniform vec3 cameraPosition;
 
+struct Light {
+    vec3 ambient;
+    float constant;
+    float cutoff;
+    vec3 diffuse;
+    vec3 direction;
+    float linear;
+    float outer_cutoff;
+    vec3 position;
+    float quadratic;
+    vec3 specular;
+    int kind;
+};
+
+
+#define MAX_NUMBER_OF_LIGHTS 4
+uniform Light lights[MAX_NUMBER_OF_LIGHTS];
+uniform int numberOfLights;
+
 in vec3 Position;
 in vec2 UV0;
 in vec3 Normal;
@@ -142,20 +244,6 @@ vec4 srgb_to_linear(vec4 srgbIn)
     return vec4(pow(srgbIn.xyz,vec3(2.2)),srgbIn.w);
 }
 
-vec3 getNormal();
-
-void main(void)
-{
-    vec3 N = getNormal();
-
-    color = material.baseColorFactor;
-    if (material.hasDiffuseTexture) {
-        vec4 albedoMap = texture(DiffuseTexture, UV0);
-        color = srgb_to_linear(albedoMap);
-    }
-    color *= vec4(Color0, 1.0);
-
-}
 vec3 getNormal()
 {
     if (!material.hasNormalTexture) {
@@ -171,5 +259,17 @@ vec3 getNormal()
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
     return normalize(TBN * tangentNormal);
+}
+
+void main(void)
+{
+    vec3 N = getNormal();
+
+    color = material.baseColorFactor;
+    if (material.hasDiffuseTexture) {
+        vec4 albedoMap = texture(DiffuseTexture, UV0);
+        color = srgb_to_linear(albedoMap);
+    }
+    color *= vec4(Color0, 1.0);
 }
 "#;

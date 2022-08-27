@@ -718,17 +718,13 @@ impl Scene {
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(crate = "phantom_dependencies::serde")]
 pub struct BlinnPhongLight {
-    ambient: glm::Vec3,
-    constant: f32,
-    cutoff: f32,
-    diffuse: glm::Vec3,
-    direction: glm::Vec3,
-    linear: f32,
-    outer_cutoff: f32,
-    position: glm::Vec3,
-    quadratic: f32,
-    specular: glm::Vec3,
-    kind: f32,
+    pub ambient: glm::Vec3,
+    pub constant: f32,
+    pub diffuse: glm::Vec3,
+    pub linear: f32,
+    pub quadratic: f32,
+    pub specular: glm::Vec3,
+    pub kind: LightKind,
 }
 
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
