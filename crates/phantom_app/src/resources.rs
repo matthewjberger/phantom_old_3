@@ -35,6 +35,9 @@ pub enum ResourceError {
     #[error("Failed to load map!")]
     LoadMap(#[source] WorldError),
 
+    #[error("Failed to reset world!")]
+    ResetWorld(#[source] WorldError),
+
     #[error("Failed to load gltf asset!")]
     LoadGltfAsset(#[source] GltfError),
 
@@ -83,6 +86,13 @@ impl<'a> Resources<'a> {
             .set_fullscreen(Some(Fullscreen::Borderless(
                 self.context.window().primary_monitor(),
             )));
+    }
+
+    pub fn reset_world(&mut self) -> Result<()> {
+        *self.world = World::new().map_err(ResourceError::ResetWorld)?;
+        self.renderer
+            .sync_world(self.world)
+            .map_err(ResourceError::SyncRenderer)
     }
 
     pub fn load_map(&mut self, path: impl AsRef<Path>) -> Result<()> {

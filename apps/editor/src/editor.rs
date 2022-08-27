@@ -36,8 +36,9 @@ impl State for Editor {
                 menu::bar(ui, |ui| {
                     global_dark_light_mode_switch(ui);
                     ui.menu_button("File", |ui| {
-                        if ui.button("Create New Map").clicked() {
-                            // TODO: Create map
+                        if ui.button("Close map").clicked() {
+                            // TODO: If unsaved, ask before closing
+                            resources.reset_world().unwrap();
                         }
 
                         if ui.button("Load Map").clicked() {
@@ -62,12 +63,7 @@ impl State for Editor {
                             ui.close_menu();
                         }
 
-                        if ui.button("Load HDR Image").clicked() {
-                            // TODO: Load map
-                            // resources.load_map(path)
-                        }
-
-                        if ui.button("Save").clicked() {
+                        if ui.button("Save Map").clicked() {
                             let path = FileDialog::new()
                                 .add_filter("Dragonglass Asset", &["dga"])
                                 .set_directory("/")
