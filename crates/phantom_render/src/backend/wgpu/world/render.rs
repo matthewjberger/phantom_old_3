@@ -1,15 +1,3 @@
-// TODO:
-// Add texture bind group layout, bind group, and make large texture array in shader
-// When uploading textures, refresh the texture array in the shader
-// Add push constants and use the push constant to offset into the texture array
-// Update shader to use uv coordinates
-// Check bytes_per_row calculation again, doesn't seem to work for some models
-//
-// Add joints back in
-//
-// Write blog post about world
-// Write blog post about rendering the world (ubo, dynamic ubo, texture array, push constants for materials, etc)
-
 use super::{
     texture::Texture,
     uniform::{
