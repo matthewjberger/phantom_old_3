@@ -13,6 +13,7 @@ use std::{collections::HashMap, ptr};
 #[derive(Hash, Eq, PartialEq, Debug)]
 pub enum WorldShaderKind {
     Pbr,
+    BlinnPhong,
 }
 
 pub struct WorldRender {
@@ -40,6 +41,10 @@ impl WorldRender {
             WorldShaderKind::Pbr,
             Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
         );
+        shaders.insert(
+            WorldShaderKind::BlinnPhong,
+            Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
+        );
 
         Ok(Self {
             geometry,
@@ -54,8 +59,8 @@ impl WorldRender {
 
         self.geometry.bind();
 
-        self.shaders[&WorldShaderKind::Pbr].use_program();
-        self.shaders[&WorldShaderKind::Pbr]
+        self.shaders[&WorldShaderKind::BlinnPhong].use_program();
+        self.shaders[&WorldShaderKind::BlinnPhong]
             .update(world, aspect_ratio)
             .unwrap();
 
@@ -81,7 +86,7 @@ impl WorldRender {
 
         let model = world.global_transform(graph, node_index).unwrap();
 
-        self.shaders[&WorldShaderKind::Pbr]
+        self.shaders[&WorldShaderKind::BlinnPhong]
             .update_model_matrix(model)
             .unwrap();
 
@@ -114,7 +119,7 @@ impl WorldRender {
                             None => Material::default(),
                         };
 
-                        self.shaders[&WorldShaderKind::Pbr]
+                        self.shaders[&WorldShaderKind::BlinnPhong]
                             .update_material(&material, &self.textures)
                             .unwrap();
 

@@ -1,3 +1,4 @@
+mod blinnphong;
 mod pbr;
 mod render;
 
