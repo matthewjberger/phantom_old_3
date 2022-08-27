@@ -22,7 +22,7 @@ pub struct Light {
 }
 
 impl Light {
-    pub fn from_node(transform: &Transform, light: &phantom_world::Light) -> Self {
+    pub fn from_node(transform: &Transform, light: &phantom_world::PbrLight) -> Self {
         let mut inner_cone_cos: f32 = 0.0;
         let mut outer_cone_cos: f32 = 0.0;
         let kind = match light.kind {
@@ -67,7 +67,7 @@ impl PbrShader {
 
     fn upload_lights(&self, world: &World) -> Result<()> {
         let world_lights = world
-            .lights()
+            .components::<phantom_world::PbrLight>()
             .unwrap()
             .iter()
             .map(|(transform, light)| Light::from_node(transform, light))

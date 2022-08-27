@@ -20,7 +20,12 @@ use phantom_dependencies::{
     serde::{Deserialize, Serialize},
     thiserror::Error,
 };
-use std::{collections::HashMap, mem::replace, path::Path};
+use std::{
+    collections::HashMap,
+    marker::{Send, Sync},
+    mem::replace,
+    path::Path,
+};
 
 #[derive(Error, Debug)]
 pub enum WorldError {
@@ -151,7 +156,7 @@ impl World {
         transform.look_at(&(-position), &glm::Vec3::y());
         let light_entity = self.ecs.push((
             transform,
-            Light {
+            PbrLight {
                 color: glm::vec3(200.0, 200.0, 200.0),
                 kind: LightKind::Point,
                 ..Default::default()
@@ -255,14 +260,16 @@ impl World {
             .ok_or(WorldError::LookupMaterial(index))
     }
 
-    pub fn lights(&self) -> Result<Vec<(Transform, Light)>> {
+    pub fn components<T: Send + Sync + Copy + Clone + 'static>(
+        &self,
+    ) -> Result<Vec<(Transform, T)>> {
         let mut lights = Vec::new();
         for graph in self.scene.graphs.iter() {
             graph
                 .walk(|node_index| {
                     let entity = graph[node_index];
                     let node_transform = self.global_transform(graph, node_index)?;
-                    if let Ok(light) = self.ecs.entry_ref(entity)?.get_component::<Light>() {
+                    if let Ok(light) = self.ecs.entry_ref(entity)?.get_component::<T>() {
                         lights.push((Transform::from(node_transform), *light));
                     }
                     Ok(())
@@ -711,7 +718,7 @@ impl Scene {
 // The 'name' field is purposefully omitted to keep the struct 'Copy'able
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(crate = "phantom_dependencies::serde")]
-pub struct Light {
+pub struct PbrLight {
     pub color: glm::Vec3,
     pub intensity: f32,
     pub range: f32,

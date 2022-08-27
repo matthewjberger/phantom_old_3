@@ -1,8 +1,9 @@
 use crate::{
     AlphaMode, Animation, BoundingBox, Camera, Channel, Ecs, Entity, Filter, Format, Geometry,
-    Interpolation, Joint, Light, LightKind, Material, Mesh, MeshRender, MorphTarget, Name,
-    OrthographicCamera, PerspectiveCamera, Primitive, Projection, Sampler, Scene, SceneGraph, Skin,
-    Texture, TextureError, Transform, TransformationSet, Vertex, World, WrappingMode,
+    Interpolation, Joint, LightKind, Material, Mesh, MeshRender, MorphTarget, Name,
+    OrthographicCamera, PbrLight, PerspectiveCamera, Primitive, Projection, Sampler, Scene,
+    SceneGraph, Skin, Texture, TextureError, Transform, TransformationSet, Vertex, World,
+    WrappingMode,
 };
 use phantom_dependencies::{
     glm,
@@ -684,8 +685,8 @@ fn load_joints(
         .collect()
 }
 
-fn load_light(light: &gltf::khr_lights_punctual::Light) -> Light {
-    Light {
+fn load_light(light: &gltf::khr_lights_punctual::Light) -> PbrLight {
+    PbrLight {
         color: glm::make_vec3(&light.color()),
         intensity: light.intensity(),
         range: light.range().unwrap_or(-1.0), // if no range is present, range is assumed to be infinite
