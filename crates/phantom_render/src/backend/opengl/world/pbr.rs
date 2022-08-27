@@ -1,9 +1,8 @@
 use crate::backend::opengl::{shader::ShaderProgram, texture::Texture};
-use phantom_dependencies::{
-    anyhow::{bail, Result},
-    nalgebra_glm as glm,
-};
+use phantom_dependencies::{anyhow::Result, nalgebra_glm as glm};
 use phantom_world::{LightKind, Material, Transform, World};
+
+use super::WorldShader;
 
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Light {
@@ -66,13 +65,6 @@ impl PbrShader {
         Ok(Self { shader_program })
     }
 
-    pub fn update(&self, world: &World, aspect_ratio: f32) -> Result<()> {
-        self.shader_program.use_program();
-        self.upload_lights(world)?;
-        self.update_uniforms(world, aspect_ratio)?;
-        Ok(())
-    }
-
     fn upload_lights(&self, world: &World) -> Result<()> {
         let world_lights = world
             .lights()
@@ -116,13 +108,33 @@ impl PbrShader {
             .set_uniform_matrix4x4("view", view.as_slice());
         Ok(())
     }
+}
 
-    pub fn update_model_matrix(&self, model_matrix: glm::Mat4) {
-        self.shader_program
-            .set_uniform_matrix4x4("model", model_matrix.as_slice());
+impl WorldShader for PbrShader {
+    fn use_program(&self) {
+        self.shader_program.use_program();
     }
 
-    pub fn update_material(&self, material: &Material, textures: &[Texture]) -> Result<()> {
+    fn update(&self, world: &World, aspect_ratio: f32) -> Result<(), Box<dyn std::error::Error>> {
+        self.upload_lights(world)?;
+        self.update_uniforms(world, aspect_ratio)?;
+        Ok(())
+    }
+
+    fn update_model_matrix(
+        &self,
+        model_matrix: glm::Mat4,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.shader_program
+            .set_uniform_matrix4x4("model", model_matrix.as_slice());
+        Ok(())
+    }
+
+    fn update_material(
+        &self,
+        material: &Material,
+        textures: &[Texture],
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.shader_program.set_uniform_vec4(
             "material.baseColorFactor",
             material.base_color_factor.as_slice(),
@@ -158,7 +170,8 @@ impl PbrShader {
                 "Normal" => material.normal_texture_index,
                 "Occlusion" => material.occlusion_texture_index,
                 "Emissive" => material.emissive_texture_index,
-                _ => bail!("Failed to find index for texture type!"),
+                // TODO: Give this a proper error
+                _ => panic!("Failed to find index for texture type!"),
             };
             let has_texture = texture_index > -1;
 

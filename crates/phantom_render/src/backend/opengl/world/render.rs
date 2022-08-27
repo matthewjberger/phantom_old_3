@@ -4,9 +4,154 @@ use crate::backend::opengl::{
     graphics::{BlendFunction, CullMode, DepthTestFunction, FrontFace, Graphics},
     texture::Texture,
 };
-use phantom_dependencies::{anyhow::Result, gl, legion::EntityStore, petgraph::graph::NodeIndex};
+use phantom_dependencies::{
+    anyhow::Result, gl, legion::EntityStore, nalgebra_glm as glm, petgraph::graph::NodeIndex,
+};
 use phantom_world::{AlphaMode, Format, Material, MeshRender, SceneGraph, World};
-use std::ptr;
+use std::{collections::HashMap, ptr};
+
+#[derive(Hash, Eq, PartialEq, Debug)]
+pub enum WorldShaderKind {
+    Pbr,
+}
+
+pub struct WorldRender {
+    pub geometry: GeometryBuffer,
+    pub shaders: HashMap<WorldShaderKind, Box<dyn WorldShader>>,
+    pub textures: Vec<Texture>,
+}
+
+impl WorldRender {
+    pub fn new(world: &World) -> Result<Self> {
+        let geometry = GeometryBuffer::new(
+            &world.geometry.vertices,
+            Some(&world.geometry.indices),
+            &[3, 3, 2, 2, 4, 4, 3],
+        );
+
+        let textures = world
+            .textures
+            .iter()
+            .map(|x| Texture::from(x))
+            .collect::<Vec<_>>();
+
+        let mut shaders = HashMap::new();
+        shaders.insert(
+            WorldShaderKind::Pbr,
+            Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
+        );
+
+        Ok(Self {
+            geometry,
+            shaders,
+            textures,
+        })
+    }
+
+    pub fn render(&self, world: &World, aspect_ratio: f32) -> Result<()> {
+        Graphics::enable_culling(CullMode::Back, FrontFace::CounterClockwise);
+        Graphics::enable_depth_testing(DepthTestFunction::LessThanOrEqualTo);
+
+        self.geometry.bind();
+
+        self.shaders[&WorldShaderKind::Pbr].use_program();
+        self.shaders[&WorldShaderKind::Pbr]
+            .update(world, aspect_ratio)
+            .unwrap();
+
+        for alpha_mode in [AlphaMode::Opaque, AlphaMode::Mask, AlphaMode::Blend].iter() {
+            for graph in world.scene.graphs.iter() {
+                graph
+                    .walk(|node_index| Ok(self.visit_node(node_index, graph, world, alpha_mode)?))
+                    .unwrap();
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_node(
+        &self,
+        node_index: NodeIndex,
+        graph: &SceneGraph,
+        world: &World,
+        alpha_mode: &AlphaMode,
+    ) -> Result<()> {
+        let entity = graph[node_index];
+
+        let model = world.global_transform(graph, node_index).unwrap();
+
+        self.shaders[&WorldShaderKind::Pbr]
+            .update_model_matrix(model)
+            .unwrap();
+
+        match world
+            .ecs
+            .entry_ref(entity)
+            .unwrap()
+            .get_component::<MeshRender>()
+        {
+            Ok(mesh_render) => {
+                if let Some(mesh) = world.geometry.meshes.get(&mesh_render.name) {
+                    match alpha_mode {
+                        AlphaMode::Opaque | AlphaMode::Mask => Graphics::disable_blending(),
+                        AlphaMode::Blend => Graphics::enable_blending(
+                            BlendFunction::SourceAlpha,
+                            BlendFunction::OneMinusSourceAlpha,
+                        ),
+                    }
+
+                    for primitive in mesh.primitives.iter() {
+                        let material = match primitive.material_index {
+                            Some(material_index) => {
+                                let primitive_material =
+                                    world.material_at_index(material_index).unwrap();
+                                if primitive_material.alpha_mode != *alpha_mode {
+                                    continue;
+                                }
+                                primitive_material.clone()
+                            }
+                            None => Material::default(),
+                        };
+
+                        self.shaders[&WorldShaderKind::Pbr]
+                            .update_material(&material, &self.textures)
+                            .unwrap();
+
+                        let ptr: *const u8 = ptr::null_mut();
+                        let ptr =
+                            unsafe { ptr.add(primitive.first_index * std::mem::size_of::<u32>()) };
+                        unsafe {
+                            gl::DrawElements(
+                                gl::TRIANGLES,
+                                primitive.number_of_indices as _,
+                                gl::UNSIGNED_INT,
+                                ptr as *const _,
+                            );
+                        }
+                    }
+                }
+            }
+            Err(_) => return Ok(()),
+        }
+
+        Ok(())
+    }
+}
+
+pub trait WorldShader {
+    fn use_program(&self);
+    fn update(&self, world: &World, aspect_ratio: f32) -> Result<(), Box<dyn std::error::Error>>;
+    fn update_model_matrix(
+        &self,
+        model_matrix: glm::Mat4,
+    ) -> Result<(), Box<dyn std::error::Error>>;
+    fn update_material(
+        &self,
+        material: &Material,
+        textures: &[Texture],
+    ) -> Result<(), Box<dyn std::error::Error>>;
+}
 
 impl From<&phantom_world::Texture> for Texture {
     fn from(world_texture: &phantom_world::Texture) -> Self {
@@ -43,117 +188,5 @@ impl From<&phantom_world::Texture> for Texture {
             pixel_format,
         );
         texture
-    }
-}
-
-pub struct WorldRender {
-    pub geometry: GeometryBuffer,
-    pub pbr_shader: PbrShader,
-    pub textures: Vec<Texture>,
-}
-
-impl WorldRender {
-    pub fn new(world: &World) -> Result<Self> {
-        let geometry = GeometryBuffer::new(
-            &world.geometry.vertices,
-            Some(&world.geometry.indices),
-            &[3, 3, 2, 2, 4, 4, 3],
-        );
-
-        let pbr_shader = PbrShader::new()?;
-
-        let textures = world
-            .textures
-            .iter()
-            .map(|x| Texture::from(x))
-            .collect::<Vec<_>>();
-
-        Ok(Self {
-            geometry,
-            pbr_shader,
-            textures,
-        })
-    }
-
-    pub fn render(&self, world: &World, aspect_ratio: f32) -> Result<()> {
-        Graphics::enable_culling(CullMode::Back, FrontFace::CounterClockwise);
-        Graphics::enable_depth_testing(DepthTestFunction::LessThanOrEqualTo);
-
-        self.geometry.bind();
-        self.pbr_shader.update(world, aspect_ratio)?;
-
-        for alpha_mode in [AlphaMode::Opaque, AlphaMode::Mask, AlphaMode::Blend].iter() {
-            for graph in world.scene.graphs.iter() {
-                graph
-                    .walk(|node_index| Ok(self.visit_node(node_index, graph, world, alpha_mode)?))
-                    .unwrap();
-            }
-        }
-
-        Ok(())
-    }
-
-    fn visit_node(
-        &self,
-        node_index: NodeIndex,
-        graph: &SceneGraph,
-        world: &World,
-        alpha_mode: &AlphaMode,
-    ) -> Result<()> {
-        let entity = graph[node_index];
-
-        let model = world.global_transform(graph, node_index).unwrap();
-
-        self.pbr_shader.update_model_matrix(model);
-
-        match world
-            .ecs
-            .entry_ref(entity)
-            .unwrap()
-            .get_component::<MeshRender>()
-        {
-            Ok(mesh_render) => {
-                if let Some(mesh) = world.geometry.meshes.get(&mesh_render.name) {
-                    match alpha_mode {
-                        AlphaMode::Opaque | AlphaMode::Mask => Graphics::disable_blending(),
-                        AlphaMode::Blend => Graphics::enable_blending(
-                            BlendFunction::SourceAlpha,
-                            BlendFunction::OneMinusSourceAlpha,
-                        ),
-                    }
-
-                    for primitive in mesh.primitives.iter() {
-                        let material = match primitive.material_index {
-                            Some(material_index) => {
-                                let primitive_material =
-                                    world.material_at_index(material_index).unwrap();
-                                if primitive_material.alpha_mode != *alpha_mode {
-                                    continue;
-                                }
-                                primitive_material.clone()
-                            }
-                            None => Material::default(),
-                        };
-
-                        self.pbr_shader.update_material(&material, &self.textures)?;
-
-                        let ptr: *const u8 = ptr::null_mut();
-                        let ptr =
-                            unsafe { ptr.add(primitive.first_index * std::mem::size_of::<u32>()) };
-                        unsafe {
-                            gl::DrawElements(
-                                gl::TRIANGLES,
-                                primitive.number_of_indices as _,
-                                gl::UNSIGNED_INT,
-                                ptr as *const _,
-                            );
-                        }
-                    }
-                }
-            }
-            Err(_) => return Ok(()),
-        }
-
-        Ok(())
     }
 }
