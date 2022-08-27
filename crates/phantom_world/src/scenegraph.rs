@@ -51,6 +51,23 @@ impl SceneGraph {
         let _edge_index = self.0.add_edge(parent_node, node, ());
     }
 
+    pub fn root_node_indices(&self) -> Result<Vec<NodeIndex>> {
+        Ok(self
+            .0
+            .node_indices()
+            .filter(|node_index| !self.has_parents(*node_index))
+            .collect::<Vec<_>>())
+    }
+
+    pub fn root_nodes(&self) -> Result<Vec<SceneGraphNode>> {
+        Ok(self
+            .root_node_indices()?
+            .iter()
+            .enumerate()
+            .map(|(offset, node_index)| SceneGraphNode::new(self[*node_index], offset as _))
+            .collect::<Vec<_>>())
+    }
+
     pub fn collect_nodes(&self) -> Result<Vec<SceneGraphNode>> {
         let mut nodes = Vec::new();
         let mut linear_offset = 0;

@@ -1,6 +1,6 @@
 use crate::{
     deserialize_ecs, scenegraph, serialize_ecs, world_as_bytes, world_from_bytes, Animation,
-    Camera, Ecs, Entity, Material, PerspectiveCamera, Projection, RegistryError, RigidBody,
+    Camera, Ecs, Entity, Material, Name, PerspectiveCamera, Projection, RegistryError, RigidBody,
     SceneGraph, SceneGraphError, SceneGraphNode, Texture, TextureError, Transform, WorldPhysics,
 };
 use phantom_dependencies::{
@@ -23,7 +23,6 @@ use phantom_dependencies::{
 use std::{
     collections::HashMap,
     marker::{Send, Sync},
-    mem::replace,
     path::Path,
 };
 
@@ -117,6 +116,7 @@ impl World {
         self.scene = Scene::default();
         self.scene.name = "Main Scene".to_string();
         self.add_default_camera()?;
+        self.add_default_light()?;
         Ok(())
     }
 
@@ -129,6 +129,7 @@ impl World {
         transform.look_at(&(-position), &glm::Vec3::y());
 
         let camera_entity = self.ecs.push((
+            Name("Default Camera".to_string()),
             transform,
             Camera {
                 name: Self::MAIN_CAMERA_NAME.to_string(),
@@ -155,6 +156,7 @@ impl World {
         };
         transform.look_at(&(-position), &glm::Vec3::y());
         let light_entity = self.ecs.push((
+            Name("Default Light".to_string()),
             transform,
             PbrLight {
                 color: glm::vec3(200.0, 200.0, 200.0),
@@ -579,11 +581,6 @@ impl World {
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         Self::from_bytes(&std::fs::read(path).map_err(WorldError::LoadWorldFromFile)?)
-    }
-
-    pub fn reload(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        let _ = replace(self, Self::load(path)?);
-        Ok(())
     }
 
     pub fn load_hdr(&mut self, path: impl AsRef<Path>) -> Result<()> {

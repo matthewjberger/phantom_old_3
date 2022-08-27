@@ -96,7 +96,7 @@ impl<'a> Resources<'a> {
     }
 
     pub fn load_map(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        self.world.reload(path).map_err(ResourceError::LoadMap)?;
+        *self.world = World::load(path).map_err(ResourceError::LoadMap)?;
         self.renderer
             .sync_world(self.world)
             .map_err(ResourceError::SyncRenderer)
