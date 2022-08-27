@@ -14,31 +14,24 @@ pub struct Editor {
     camera: MouseOrbit,
 }
 
-impl State for Editor {
-    fn label(&self) -> String {
-        "Phantom Editor - Main".to_string()
-    }
-
-    fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {
-        if resources.world.active_camera_is_main()? {
-            let camera_entity = resources.world.active_camera()?;
-            self.camera.update(resources, camera_entity)?;
-        }
-        Ok(Transition::None)
-    }
-
-    fn update_gui(&mut self, resources: &mut Resources) -> StateResult<Transition> {
+impl Editor {
+    fn top_panel(&mut self, resources: &mut Resources) {
         let ctx = &resources.gui.context.clone();
-
         egui::TopBottomPanel::top("top_panel")
             .resizable(true)
             .show(ctx, |ui| {
                 menu::bar(ui, |ui| {
                     global_dark_light_mode_switch(ui);
                     ui.menu_button("File", |ui| {
-                        if ui.button("Close map").clicked() {
-                            // TODO: If unsaved, ask before closing
-                            resources.reset_world().unwrap();
+                        if ui.button("Import asset (gltf/glb)").clicked() {
+                            let path = FileDialog::new()
+                                .add_filter("GLTF Asset", &["glb", "gltf"])
+                                .set_directory("/")
+                                .pick_file();
+                            if let Some(path) = path {
+                                resources.load_gltf_asset(&path).unwrap();
+                            }
+                            ui.close_menu();
                         }
 
                         if ui.button("Load Map").clicked() {
@@ -48,17 +41,6 @@ impl State for Editor {
                                 .pick_file();
                             if let Some(path) = path {
                                 resources.load_map(&path).unwrap();
-                            }
-                            ui.close_menu();
-                        }
-
-                        if ui.button("Import asset (gltf/glb)").clicked() {
-                            let path = FileDialog::new()
-                                .add_filter("GLTF Asset", &["glb", "gltf"])
-                                .set_directory("/")
-                                .pick_file();
-                            if let Some(path) = path {
-                                resources.load_gltf_asset(&path).unwrap();
                             }
                             ui.close_menu();
                         }
@@ -74,34 +56,68 @@ impl State for Editor {
                             ui.close_menu();
                         }
 
+                        if ui.button("Close map").clicked() {
+                            // TODO: If unsaved, ask before closing
+                            resources.reset_world().unwrap();
+                        }
+
                         if ui.button("Quit").clicked() {
                             resources.system.exit_requested = true;
                         }
                     });
                 });
             });
+    }
 
+    fn left_panel(&mut self, resources: &mut Resources) {
+        let ctx = &resources.gui.context.clone();
         egui::SidePanel::left("scene_explorer")
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Scene Explorer");
                 ui.allocate_space(ui.available_size());
             });
+    }
 
+    fn right_panel(&mut self, resources: &mut Resources) {
+        let ctx = &resources.gui.context.clone();
         egui::SidePanel::right("inspector")
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Inspector");
                 ui.allocate_space(ui.available_size());
             });
+    }
 
+    fn bottom_panel(&mut self, resources: &mut Resources) {
+        let ctx = &resources.gui.context.clone();
         egui::TopBottomPanel::bottom("console")
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Assets");
                 ui.allocate_space(ui.available_size());
             });
+    }
+}
 
+impl State for Editor {
+    fn label(&self) -> String {
+        "Phantom Editor - Main".to_string()
+    }
+
+    fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {
+        if resources.world.active_camera_is_main()? {
+            let camera_entity = resources.world.active_camera()?;
+            self.camera.update(resources, camera_entity)?;
+        }
+        Ok(Transition::None)
+    }
+
+    fn update_gui(&mut self, resources: &mut Resources) -> StateResult<Transition> {
+        self.top_panel(resources);
+        self.left_panel(resources);
+        self.right_panel(resources);
+        self.bottom_panel(resources);
         Ok(Transition::None)
     }
 
