@@ -1,4 +1,4 @@
-use super::pbr::PbrShader;
+use super::{blinnphong::BlinnPhongShader, pbr::PbrShader, unlit::UnlitShader};
 use crate::backend::opengl::{
     buffer::GeometryBuffer,
     graphics::{BlendFunction, CullMode, DepthTestFunction, FrontFace, Graphics},
@@ -14,12 +14,14 @@ use std::{collections::HashMap, ptr};
 pub enum WorldShaderKind {
     Pbr,
     BlinnPhong,
+    UnlitShader,
 }
 
 pub struct WorldRender {
     pub geometry: GeometryBuffer,
     pub shaders: HashMap<WorldShaderKind, Box<dyn WorldShader>>,
     pub textures: Vec<Texture>,
+    selected_shader: WorldShaderKind,
 }
 
 impl WorldRender {
@@ -36,19 +38,10 @@ impl WorldRender {
             .map(|x| Texture::from(x))
             .collect::<Vec<_>>();
 
-        let mut shaders = HashMap::new();
-        shaders.insert(
-            WorldShaderKind::Pbr,
-            Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
-        );
-        shaders.insert(
-            WorldShaderKind::BlinnPhong,
-            Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
-        );
-
         Ok(Self {
             geometry,
-            shaders,
+            shaders: populate_shaders()?,
+            selected_shader: WorldShaderKind::BlinnPhong,
             textures,
         })
     }
@@ -59,8 +52,8 @@ impl WorldRender {
 
         self.geometry.bind();
 
-        self.shaders[&WorldShaderKind::BlinnPhong].use_program();
-        self.shaders[&WorldShaderKind::BlinnPhong]
+        self.shaders[&self.selected_shader].use_program();
+        self.shaders[&self.selected_shader]
             .update(world, aspect_ratio)
             .unwrap();
 
@@ -86,7 +79,7 @@ impl WorldRender {
 
         let model = world.global_transform(graph, node_index).unwrap();
 
-        self.shaders[&WorldShaderKind::BlinnPhong]
+        self.shaders[&self.selected_shader]
             .update_model_matrix(model)
             .unwrap();
 
@@ -119,7 +112,7 @@ impl WorldRender {
                             None => Material::default(),
                         };
 
-                        self.shaders[&WorldShaderKind::BlinnPhong]
+                        self.shaders[&self.selected_shader]
                             .update_material(&material, &self.textures)
                             .unwrap();
 
@@ -194,4 +187,21 @@ impl From<&phantom_world::Texture> for Texture {
         );
         texture
     }
+}
+
+fn populate_shaders() -> Result<HashMap<WorldShaderKind, Box<dyn WorldShader>>> {
+    let mut shaders = HashMap::new();
+    shaders.insert(
+        WorldShaderKind::Pbr,
+        Box::new(PbrShader::new()?) as Box<dyn WorldShader>,
+    );
+    shaders.insert(
+        WorldShaderKind::BlinnPhong,
+        Box::new(BlinnPhongShader::new()?) as Box<dyn WorldShader>,
+    );
+    shaders.insert(
+        WorldShaderKind::UnlitShader,
+        Box::new(UnlitShader::new()?) as Box<dyn WorldShader>,
+    );
+    Ok(shaders)
 }

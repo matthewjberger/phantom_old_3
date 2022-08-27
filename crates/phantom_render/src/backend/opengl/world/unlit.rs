@@ -3,11 +3,11 @@ use crate::backend::opengl::{shader::ShaderProgram, texture::Texture};
 use phantom_dependencies::{anyhow::Result, nalgebra_glm as glm};
 use phantom_world::{Material, World};
 
-pub struct BlinnPhongShader {
+pub struct UnlitShader {
     shader_program: ShaderProgram,
 }
 
-impl BlinnPhongShader {
+impl UnlitShader {
     pub fn new() -> Result<Self> {
         let mut shader_program = ShaderProgram::new();
         shader_program
@@ -31,7 +31,7 @@ impl BlinnPhongShader {
     }
 }
 
-impl WorldShader for BlinnPhongShader {
+impl WorldShader for UnlitShader {
     fn use_program(&self) {
         self.shader_program.use_program();
     }
@@ -53,33 +53,12 @@ impl WorldShader for BlinnPhongShader {
     fn update_material(
         &self,
         material: &Material,
-        textures: &[Texture],
+        _textures: &[Texture],
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.shader_program.set_uniform_vec4(
             "material.baseColorFactor",
             material.base_color_factor.as_slice(),
         );
-
-        for (index, descriptor) in ["Diffuse", "Normal"].iter().enumerate() {
-            let texture_index = match *descriptor {
-                "Diffuse" => material.color_texture_index,
-                "Normal" => material.normal_texture_index,
-                // TODO: Give this a proper error
-                _ => panic!("Failed to find index for texture type!"),
-            };
-            let has_texture = texture_index > -1;
-
-            self.shader_program
-                .set_uniform_bool(&format!("material.has{}Texture", *descriptor), has_texture);
-
-            self.shader_program
-                .set_uniform_int(&format!("{}Texture", *descriptor), index as _);
-
-            if has_texture {
-                textures[texture_index as usize].bind(index as _);
-            }
-        }
-
         Ok(())
     }
 }
@@ -117,18 +96,13 @@ void main()
 const FRAGMENT_SHADER_SOURCE: &'static str = &r#"
 #version 450 core
 
+uniform vec3 cameraPosition;
+
 struct Material {
     vec4 baseColorFactor;
-    bool hasDiffuseTexture;
-    bool hasNormalTexture;
-}; 
+};
 
 uniform Material material;
-
-uniform sampler2D DiffuseTexture;
-uniform sampler2D NormalTexture;
-
-uniform vec3 cameraPosition;
 
 in vec3 Position;
 in vec2 UV0;
@@ -137,39 +111,13 @@ in vec3 Color0;
 
 out vec4 color;
 
-vec4 srgb_to_linear(vec4 srgbIn)
-{
-    return vec4(pow(srgbIn.xyz,vec3(2.2)),srgbIn.w);
-}
-
 vec3 getNormal();
+
 
 void main(void)
 {
-    vec3 N = getNormal();
-
     color = material.baseColorFactor;
-    if (material.hasDiffuseTexture) {
-        vec4 albedoMap = texture(DiffuseTexture, UV0);
-        color = srgb_to_linear(albedoMap);
-    }
     color *= vec4(Color0, 1.0);
 
-}
-vec3 getNormal()
-{
-    if (!material.hasNormalTexture) {
-        return Normal;
-    }
-    vec3 tangentNormal = texture(NormalTexture, UV0).xyz * 2.0 - 1.0;
-    vec3 Q1  = dFdx(Position);
-    vec3 Q2  = dFdy(Position);
-    vec2 st1 = dFdx(UV0);
-    vec2 st2 = dFdy(UV0);
-    vec3 N   = normalize(Normal);
-    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B  = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
-    return normalize(TBN * tangentNormal);
 }
 "#;
