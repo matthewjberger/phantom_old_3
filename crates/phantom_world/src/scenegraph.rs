@@ -89,7 +89,7 @@ impl SceneGraph {
         Ok(nodes)
     }
 
-    pub fn parent_of(&self, index: NodeIndex) -> Option<NodeIndex> {
+    pub fn get_parent_of(&self, index: NodeIndex) -> Option<NodeIndex> {
         let mut incoming_walker = self.0.neighbors_directed(index, Incoming).detach();
         incoming_walker.next_node(&self.0)
     }

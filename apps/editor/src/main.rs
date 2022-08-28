@@ -4,6 +4,7 @@ use phantom::{
     render::Backend,
 };
 
+mod commands;
 mod editor;
 
 fn main() -> Result<(), ApplicationError> {

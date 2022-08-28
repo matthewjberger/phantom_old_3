@@ -11,17 +11,13 @@ use phantom::{
     world::{Ecs, Entity, Name, SceneGraph},
 };
 
-// TODO: Trait for EditorAction(s) that can perform and undo an action
-//       Refer to editor action with an enum that lists all possible actions
-//       Have stack for pending editor actions containing the enums
-//       Have stack for performed editor actions containing instances of the actions
-//       Gui can queue up an action by adding to the editor pending action queue
-//       Action is performed on the next frame
+use crate::commands::{CommandList, LoadGltfAssetCommand};
 
 #[derive(Default)]
 pub struct Editor {
     camera: MouseOrbit,
     selected_entities: Vec<Entity>,
+    commands: CommandList,
 }
 
 impl Editor {
@@ -39,7 +35,9 @@ impl Editor {
                                 .set_directory("/")
                                 .pick_file();
                             if let Some(path) = path {
-                                resources.load_gltf_asset(&path).unwrap();
+                                self.commands
+                                    .queue_command(Box::new(LoadGltfAssetCommand(path)))
+                                    .unwrap();
                             }
                             ui.close_menu();
                         }
@@ -68,12 +66,26 @@ impl Editor {
 
                         if ui.button("Close map").clicked() {
                             // TODO: If unsaved, ask before closing
-                            resources.reset_world().unwrap();
+                            resources.close_map().unwrap();
                         }
 
                         if ui.button("Quit").clicked() {
                             resources.system.exit_requested = true;
                         }
+                    });
+
+                    ui.menu_button("Edit", |ui| {
+                        ui.add_enabled_ui(self.commands.has_undo_commands(), |ui| {
+                            if ui.button("Undo").clicked() {
+                                self.commands.undo(resources).unwrap();
+                            }
+                        });
+
+                        ui.add_enabled_ui(self.commands.has_redo_commands(), |ui| {
+                            if ui.button("Redo").clicked() {
+                                self.commands.redo(resources).unwrap();
+                            }
+                        });
                     });
                 });
             });
@@ -92,9 +104,9 @@ impl Editor {
 
                 let scene = &mut resources.world.scene;
                 let ecs = &mut resources.world.ecs;
-                for graph in scene.graphs.iter_mut() {
+                for (graph_index, graph) in scene.graphs.iter_mut().enumerate() {
                     for node_index in graph.root_node_indices().unwrap() {
-                        self.print_node(ecs, graph, node_index, ui);
+                        self.print_node(ecs, graph, graph_index, node_index, ui);
                     }
                 }
 
@@ -102,14 +114,19 @@ impl Editor {
             });
     }
 
-    fn print_node(&mut self, ecs: &mut Ecs, graph: &mut SceneGraph, index: NodeIndex, ui: &mut Ui) {
-        let entity = graph[index];
+    fn print_node(
+        &mut self,
+        ecs: &mut Ecs,
+        graph: &mut SceneGraph,
+        graph_index: usize,
+        entity_index: NodeIndex,
+        ui: &mut Ui,
+    ) {
+        let entity = graph[entity_index];
         let selected = self.selected_entities.contains(&entity);
 
-        let mut delete_requested = false;
         let context_menu = |ui: &mut Ui| {
             if ui.button("Delete...").clicked() {
-                delete_requested = true;
                 ui.close_menu();
             }
 
@@ -130,12 +147,12 @@ impl Editor {
             }
         };
 
-        let response = if graph.has_children(index) {
+        let response = if graph.has_children(entity_index) {
             egui::CollapsingHeader::new(header.to_string())
                 .show(ui, |ui| {
-                    let mut neighbors = graph.neighbors(index, Outgoing);
+                    let mut neighbors = graph.neighbors(entity_index, Outgoing);
                     while let Some(child) = neighbors.next_node(&graph.0) {
-                        self.print_node(ecs, graph, child, ui);
+                        self.print_node(ecs, graph, graph_index, child, ui);
                     }
                 })
                 .header_response
@@ -144,10 +161,6 @@ impl Editor {
             ui.add(SelectableLabel::new(selected, header))
                 .context_menu(context_menu)
         };
-
-        if delete_requested {
-            graph.remove_node(index);
-        }
 
         if response.clicked() {
             if !self.selected_entities.contains(&entity) || self.selected_entities.len() > 0 {
@@ -187,6 +200,7 @@ impl State for Editor {
     }
 
     fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {
+        self.commands.execute_pending_commands(resources)?;
         if resources.world.active_camera_is_main()? {
             let camera_entity = resources.world.active_camera()?;
             self.camera.update(resources, camera_entity)?;

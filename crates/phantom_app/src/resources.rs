@@ -88,7 +88,7 @@ impl<'a> Resources<'a> {
             )));
     }
 
-    pub fn reset_world(&mut self) -> Result<()> {
+    pub fn close_map(&mut self) -> Result<()> {
         *self.world = World::new().map_err(ResourceError::ResetWorld)?;
         self.renderer
             .sync_world(self.world)
