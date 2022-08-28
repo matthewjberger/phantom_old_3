@@ -11,6 +11,13 @@ use phantom::{
     world::{Ecs, Entity, Name, SceneGraph},
 };
 
+// TODO: Trait for EditorAction(s) that can perform and undo an action
+//       Refer to editor action with an enum that lists all possible actions
+//       Have stack for pending editor actions containing the enums
+//       Have stack for performed editor actions containing instances of the actions
+//       Gui can queue up an action by adding to the editor pending action queue
+//       Action is performed on the next frame
+
 #[derive(Default)]
 pub struct Editor {
     camera: MouseOrbit,
@@ -99,9 +106,10 @@ impl Editor {
         let entity = graph[index];
         let selected = self.selected_entities.contains(&entity);
 
+        let mut delete_requested = false;
         let context_menu = |ui: &mut Ui| {
             if ui.button("Delete...").clicked() {
-                // UI TODO: Allow deleting entities
+                delete_requested = true;
                 ui.close_menu();
             }
 
@@ -111,7 +119,7 @@ impl Editor {
             }
         };
 
-        let mut header = {
+        let header = {
             let mut entry = ecs.entry(entity).expect("Failed to find entity!");
             match entry.get_component_mut::<Name>() {
                 Ok(name) => name.0.to_string(),
@@ -125,15 +133,6 @@ impl Editor {
         let response = if graph.has_children(index) {
             egui::CollapsingHeader::new(header.to_string())
                 .show(ui, |ui| {
-                    let response = ui.add(egui::TextEdit::singleline(&mut header));
-                    if response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                        let mut entry = ecs.entry(entity).expect("Failed to find entity!");
-                        let name = entry
-                            .get_component_mut::<Name>()
-                            .expect("Failed to lookup name!");
-                        name.0 = header.to_string();
-                    }
-
                     let mut neighbors = graph.neighbors(index, Outgoing);
                     while let Some(child) = neighbors.next_node(&graph.0) {
                         self.print_node(ecs, graph, child, ui);
@@ -145,6 +144,10 @@ impl Editor {
             ui.add(SelectableLabel::new(selected, header))
                 .context_menu(context_menu)
         };
+
+        if delete_requested {
+            graph.remove_node(index);
+        }
 
         if response.clicked() {
             if !self.selected_entities.contains(&entity) || self.selected_entities.len() > 0 {

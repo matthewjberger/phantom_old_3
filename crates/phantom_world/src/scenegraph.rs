@@ -1,5 +1,6 @@
 use phantom_dependencies::{
     legion::{self, world::EntityAccessError},
+    log,
     petgraph::{graph::WalkNeighbors, prelude::*},
     serde::{Deserialize, Serialize},
 };
@@ -45,6 +46,15 @@ impl SceneGraph {
 
     pub fn add_node(&mut self, node: Entity) -> NodeIndex {
         self.0.add_node(node)
+    }
+
+    pub fn remove_node(&mut self, node_index: NodeIndex) {
+        log::info!("Removing node: {:#?}", node_index);
+        let _ = self.0.remove_node(node_index);
+
+        while let Some(child_index) = self.neighbors(node_index, Outgoing).next_node(&self.0) {
+            self.remove_node(child_index);
+        }
     }
 
     pub fn add_edge(&mut self, parent_node: NodeIndex, node: NodeIndex) {
