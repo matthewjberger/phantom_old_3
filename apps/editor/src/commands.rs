@@ -75,7 +75,7 @@ pub struct LoadGltfAssetCommand(pub PathBuf);
 
 impl Command for LoadGltfAssetCommand {
     fn is_undoable(&self) -> bool {
-        true
+        false
     }
 
     fn execute(&mut self, resources: &mut Resources) -> Result<()> {
@@ -84,9 +84,85 @@ impl Command for LoadGltfAssetCommand {
         Ok(())
     }
 
+    fn undo(&mut self, _resources: &mut Resources) -> Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct OpenMapCommand(pub PathBuf);
+
+impl Command for OpenMapCommand {
+    fn is_undoable(&self) -> bool {
+        true
+    }
+
+    fn execute(&mut self, resources: &mut Resources) -> Result<()> {
+        log::info!("Loading phantom map: {:?}", &self.0);
+        resources.open_map(&self.0).unwrap();
+        Ok(())
+    }
+
     fn undo(&mut self, resources: &mut Resources) -> Result<()> {
         log::info!("Closing map: {:?}", &self.0);
         resources.close_map().unwrap();
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct SaveMapCommand(pub PathBuf);
+
+impl Command for SaveMapCommand {
+    fn is_undoable(&self) -> bool {
+        false
+    }
+
+    fn execute(&mut self, resources: &mut Resources) -> Result<()> {
+        log::info!("Saving map: {:?}", &self.0);
+        resources.world.save(&self.0).unwrap();
+        Ok(())
+    }
+
+    fn undo(&mut self, _resources: &mut Resources) -> Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct CloseMapCommand;
+
+impl Command for CloseMapCommand {
+    fn is_undoable(&self) -> bool {
+        false
+    }
+
+    fn execute(&mut self, resources: &mut Resources) -> Result<()> {
+        log::info!("Closing map");
+        resources.close_map().unwrap();
+        Ok(())
+    }
+
+    fn undo(&mut self, _resources: &mut Resources) -> Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct ExitCommand;
+
+impl Command for ExitCommand {
+    fn is_undoable(&self) -> bool {
+        false
+    }
+
+    fn execute(&mut self, resources: &mut Resources) -> Result<()> {
+        log::info!("Exiting...");
+        resources.system.exit_requested = true;
+        Ok(())
+    }
+
+    fn undo(&mut self, _resources: &mut Resources) -> Result<()> {
         Ok(())
     }
 }

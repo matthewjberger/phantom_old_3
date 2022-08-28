@@ -11,7 +11,9 @@ use phantom::{
     world::{Ecs, Entity, Name, SceneGraph},
 };
 
-use crate::commands::{CommandList, LoadGltfAssetCommand};
+use crate::commands::{
+    CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
+};
 
 #[derive(Default)]
 pub struct Editor {
@@ -44,33 +46,40 @@ impl Editor {
 
                         if ui.button("Load Map").clicked() {
                             let path = FileDialog::new()
-                                .add_filter("Dragonglass Asset", &["dga"])
+                                .add_filter("Phantom Map", &["pha"])
                                 .set_directory("/")
                                 .pick_file();
                             if let Some(path) = path {
-                                resources.load_map(&path).unwrap();
+                                self.commands
+                                    .queue_command(Box::new(OpenMapCommand(path)))
+                                    .unwrap();
                             }
                             ui.close_menu();
                         }
 
                         if ui.button("Save Map").clicked() {
                             let path = FileDialog::new()
-                                .add_filter("Dragonglass Asset", &["dga"])
+                                .add_filter("Phantom Map", &["pha"])
                                 .set_directory("/")
                                 .save_file();
                             if let Some(path) = path {
-                                resources.world.save(&path).expect("Failed to save world!");
+                                self.commands
+                                    .queue_command(Box::new(SaveMapCommand(path)))
+                                    .unwrap();
                             }
                             ui.close_menu();
                         }
 
                         if ui.button("Close map").clicked() {
-                            // TODO: If unsaved, ask before closing
-                            resources.close_map().unwrap();
+                            self.commands
+                                .queue_command(Box::new(CloseMapCommand {}))
+                                .unwrap();
                         }
 
                         if ui.button("Quit").clicked() {
-                            resources.system.exit_requested = true;
+                            self.commands
+                                .queue_command(Box::new(ExitCommand {}))
+                                .unwrap();
                         }
                     });
 
