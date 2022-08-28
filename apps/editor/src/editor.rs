@@ -83,18 +83,16 @@ impl Editor {
                         }
                     });
 
-                    ui.menu_button("Edit", |ui| {
-                        ui.add_enabled_ui(self.commands.has_undo_commands(), |ui| {
-                            if ui.button("Undo").clicked() {
-                                self.commands.undo(resources).unwrap();
-                            }
-                        });
+                    ui.add_enabled_ui(self.commands.has_undo_commands(), |ui| {
+                        if ui.button("Undo").clicked() {
+                            self.commands.undo(resources).unwrap();
+                        }
+                    });
 
-                        ui.add_enabled_ui(self.commands.has_redo_commands(), |ui| {
-                            if ui.button("Redo").clicked() {
-                                self.commands.redo(resources).unwrap();
-                            }
-                        });
+                    ui.add_enabled_ui(self.commands.has_redo_commands(), |ui| {
+                        if ui.button("Redo").clicked() {
+                            self.commands.redo(resources).unwrap();
+                        }
                     });
                 });
             });
@@ -194,7 +192,7 @@ impl Editor {
 
     fn bottom_panel(&mut self, resources: &mut Resources) {
         let ctx = &resources.gui.context.clone();
-        egui::TopBottomPanel::bottom("console")
+        egui::TopBottomPanel::bottom("assets")
             .resizable(true)
             .show(ctx, |ui| {
                 ui.heading("Assets");
