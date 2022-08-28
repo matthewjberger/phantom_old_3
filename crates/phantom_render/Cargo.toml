@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = { version = "1.9.1", features = ["derive"] }
+bytemuck = { version = "1.12.1", features = ["derive"] }
 phantom_dependencies = { path = "../phantom_dependencies" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_world = { path = "../phantom_world" }
-thiserror = "1.0.31"
+thiserror = "1.0.32"

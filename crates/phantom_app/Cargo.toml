@@ -8,4 +8,4 @@ phantom_dependencies = { path = "../phantom_dependencies" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_render = { path = "../phantom_render" }
 phantom_world = { path = "../phantom_world" }
-thiserror = "1.0.31"
+thiserror = "1.0.32"
