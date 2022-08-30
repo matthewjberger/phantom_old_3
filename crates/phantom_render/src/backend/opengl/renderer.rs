@@ -1,4 +1,4 @@
-use super::{graphics::Graphics, world::WorldRender};
+use super::{graphics::Graphics, grid::GridShader, world::WorldRender};
 use crate::Renderer;
 use phantom_dependencies::{
     anyhow::Result,
@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 pub struct OpenGlRenderer {
     world_render: Option<WorldRender>,
+    grid: GridShader,
     viewport: Viewport,
     glow_context: Arc<glow::Context>,
     gui_painter: Painter,
@@ -32,9 +33,12 @@ impl OpenGlRenderer {
         let glow_context = Arc::new(glow_context);
         let gui_painter = egui_glow::Painter::new(glow_context.clone(), None, "").unwrap();
 
+        let grid = GridShader::new()?;
+
         Ok(Self {
             world_render: None,
             viewport: *viewport,
+            grid,
             glow_context,
             gui_painter,
         })
@@ -72,13 +76,22 @@ impl Renderer for OpenGlRenderer {
 
     fn update(
         &mut self,
-        _world: &mut World,
+        world: &mut World,
         gui_frame_resources: &mut phantom_gui::GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let textures_delta = gui_frame_resources.textures_delta;
         for (id, image_delta) in textures_delta.set.iter() {
             self.gui_painter.set_texture(*id, image_delta);
         }
+
+        let (projection, view) = world
+            .active_camera_matrices(self.viewport.aspect_ratio())
+            .unwrap();
+        let camera_entity = world.active_camera().unwrap();
+        let camera_transform = world.entity_global_transform(camera_entity).unwrap();
+        self.grid
+            .update(view, projection, camera_transform.translation);
+
         Ok(())
     }
 
@@ -91,6 +104,8 @@ impl Renderer for OpenGlRenderer {
     ) -> Result<(), Box<dyn std::error::Error>> {
         Graphics::clear_buffers();
         Graphics::clear_color(&glm::vec3(0.3, 0.3, 0.3));
+
+        self.grid.render();
 
         if let Some(world_render) = self.world_render.as_ref() {
             world_render.render(world, self.viewport.aspect_ratio())?;
