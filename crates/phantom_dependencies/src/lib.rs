@@ -3,6 +3,7 @@ pub use bincode;
 pub use bmfont;
 pub use bytemuck;
 pub use egui;
+pub use egui_gizmo;
 pub use egui_glow;
 pub use egui_wgpu;
 pub use egui_winit;

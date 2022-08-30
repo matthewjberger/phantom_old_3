@@ -1,25 +1,38 @@
+use crate::commands::{
+    CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
+};
 use phantom::{
     app::{MouseOrbit, Resources, State, StateResult, Transition},
     dependencies::{
         anyhow::anyhow,
-        egui::{self, global_dark_light_mode_switch, menu, SelectableLabel, Ui},
+        egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui},
+        egui_gizmo::GizmoMode,
+        glm,
+        legion::EntityStore,
         log,
         petgraph::{graph::NodeIndex, Direction::Outgoing},
         rfd::FileDialog,
-        winit::event::{ElementState, KeyboardInput, MouseButton},
+        winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode},
     },
-    world::{Ecs, Entity, Name, SceneGraph},
+    gui::GizmoWidget,
+    world::{Ecs, Entity, Name, RigidBody, SceneGraph, Transform},
 };
 
-use crate::commands::{
-    CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
-};
-
-#[derive(Default)]
 pub struct Editor {
     camera: MouseOrbit,
     selected_entities: Vec<Entity>,
     commands: CommandList,
+    gizmo: GizmoWidget,
+}
+impl Default for Editor {
+    fn default() -> Self {
+        Self {
+            camera: MouseOrbit::default(),
+            selected_entities: Vec::new(),
+            commands: CommandList::default(),
+            gizmo: GizmoWidget::new(),
+        }
+    }
 }
 
 impl Editor {
@@ -103,6 +116,8 @@ impl Editor {
         egui::SidePanel::left("scene_explorer")
             .resizable(true)
             .show(ctx, |ui| {
+                ui.heading("Tools");
+
                 ui.heading("Scene Explorer");
 
                 ui.label(format!("Scene Name: {}", &resources.world.scene.name));
@@ -199,6 +214,44 @@ impl Editor {
                 ui.allocate_space(ui.available_size());
             });
     }
+
+    fn viewport_panel(&mut self, resources: &mut Resources) {
+        let context = &resources.gui.context;
+
+        egui::Area::new("Viewport")
+            .fixed_pos((0.0, 0.0))
+            .show(context, |ui| {
+                ui.with_layer_id(LayerId::background(), |ui| {
+                    for entity in self.selected_entities.iter() {
+                        let (projection, view) = resources
+                            .world
+                            .active_camera_matrices(resources.system.aspect_ratio())
+                            .expect("Failed to get camera matrices!");
+                        let transform = resources
+                            .world
+                            .entity_global_transform(*entity)
+                            .expect("Failed to get entity transform!");
+                        if let Some(gizmo_result) =
+                            self.gizmo.render(ui, transform.matrix(), view, projection)
+                        {
+                            let model_matrix: glm::Mat4 = gizmo_result.transform.into();
+                            let gizmo_transform = Transform::from(model_matrix);
+                            let mut entry = resources.world.ecs.entry_mut(*entity).unwrap();
+                            let mut transform = entry.get_component_mut::<Transform>().unwrap();
+                            transform.translation = gizmo_transform.translation;
+                            transform.rotation = gizmo_transform.rotation;
+                            transform.scale = gizmo_transform.scale;
+                            if entry.get_component::<RigidBody>().is_ok() {
+                                resources
+                                    .world
+                                    .sync_rigid_body_to_transform(*entity)
+                                    .expect("Failed to sync rigid body to transform!");
+                            }
+                        }
+                    }
+                });
+            });
+    }
 }
 
 impl State for Editor {
@@ -220,6 +273,7 @@ impl State for Editor {
         self.left_panel(resources);
         self.right_panel(resources);
         self.bottom_panel(resources);
+        self.viewport_panel(resources);
         Ok(Transition::None)
     }
 
@@ -244,6 +298,17 @@ impl State for Editor {
         button_state: &ElementState,
     ) -> StateResult<Transition> {
         log::trace!("Mouse event: {:#?} {:#?}", button, button_state);
+        // if (MouseButton::Left, ElementState::Pressed) == (*button, *button_state) {
+        //     let interact_distance = f32::MAX;
+        //     let picked_entity = resources.world.pick_object(
+        //         &resources.mouse_ray_configuration()?,
+        //         interact_distance,
+        //         EDITOR_COLLISION_GROUP,
+        //     )?;
+        //     if let Some(entity) = picked_entity {
+        //         self.select_entity(entity, resources)?;
+        //     }
+        // }
         Ok(Transition::None)
     }
 
@@ -253,6 +318,21 @@ impl State for Editor {
         input: KeyboardInput,
     ) -> StateResult<Transition> {
         log::trace!("Key event received: {:#?}", input);
+        match (input.virtual_keycode, input.state) {
+            (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                self.selected_entities.clear();
+            }
+            (Some(VirtualKeyCode::T), ElementState::Pressed) => {
+                self.gizmo.mode = GizmoMode::Translate;
+            }
+            (Some(VirtualKeyCode::R), ElementState::Pressed) => {
+                self.gizmo.mode = GizmoMode::Rotate;
+            }
+            (Some(VirtualKeyCode::S), ElementState::Pressed) => {
+                self.gizmo.mode = GizmoMode::Scale;
+            }
+            _ => {}
+        }
         Ok(Transition::None)
     }
 }

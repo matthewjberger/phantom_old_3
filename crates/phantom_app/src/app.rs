@@ -7,6 +7,7 @@ use phantom_dependencies::{
     glutin::{ContextBuilder, CreationError},
     image::{self, io::Reader},
     log,
+    rapier3d::prelude::InteractionGroups,
     thiserror::Error,
     winit::{
         self,
@@ -70,6 +71,8 @@ pub enum ApplicationError {
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
+
+const EDITOR_COLLISION_GROUP: InteractionGroups = InteractionGroups::new(0b1, 0b1);
 
 pub struct AppConfig {
     pub width: u32,
@@ -189,12 +192,10 @@ fn run_loop(
         _ => false,
     };
 
-    if !gui_captured_event {
-        resources.system.handle_event(event);
-        resources
-            .input
-            .handle_event(event, resources.system.window_center());
-    }
+    resources.system.handle_event(event);
+    resources
+        .input
+        .handle_event(event, resources.system.window_center());
 
     if !state_machine.is_running() {
         state_machine
@@ -202,9 +203,11 @@ fn run_loop(
             .map_err(ApplicationError::StartStateMachine)?;
     }
 
-    state_machine
-        .handle_event(&mut resources, event)
-        .map_err(ApplicationError::HandleEvent)?;
+    if !gui_captured_event {
+        state_machine
+            .handle_event(&mut resources, event)
+            .map_err(ApplicationError::HandleEvent)?;
+    }
 
     if let Some(event) = resources.gilrs.next_event() {
         state_machine
@@ -264,12 +267,6 @@ fn run_loop(
             WindowEvent::CloseRequested => control_flow.set_exit(),
 
             WindowEvent::KeyboardInput { input, .. } => {
-                if let (Some(VirtualKeyCode::Escape), ElementState::Pressed) =
-                    (input.virtual_keycode, input.state)
-                {
-                    control_flow.set_exit();
-                }
-
                 state_machine
                     .on_key(&mut resources, *input)
                     .map_err(ApplicationError::HandleEvent)?;
