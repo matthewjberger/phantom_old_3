@@ -1,4 +1,5 @@
 use crate::{Input, Resources, State, StateMachine, System};
+use phantom_config::Config;
 use phantom_dependencies::{
     egui::FullOutput,
     egui_wgpu::renderer::ScreenDescriptor,
@@ -153,15 +154,18 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
 
     let mut world = World::new().map_err(ApplicationError::CreateWorld)?;
 
+    let mut config = Config::default();
+
     event_loop.run(move |event, _, control_flow| {
         let resources = Resources {
-            renderer: &mut renderer,
-            world: &mut world,
+            config: &mut config,
             context: &mut context,
-            gui: &mut gui,
             gilrs: &mut gilrs,
+            gui: &mut gui,
             input: &mut input,
+            renderer: &mut renderer,
             system: &mut system,
+            world: &mut world,
         };
         if let Err(error) = run_loop(&mut state_machine, &event, control_flow, resources) {
             log::error!("Application error: {}", error);
@@ -247,12 +251,13 @@ fn run_loop(
 
             resources
                 .renderer
-                .update(resources.world, &mut gui_frame_resources)
+                .update(resources.world, resources.config, &mut gui_frame_resources)
                 .map_err(ApplicationError::UpdateRenderer)?;
             resources
                 .renderer
                 .render_frame(
                     resources.world,
+                    resources.config,
                     &paint_jobs,
                     &screen_descriptor,
                     resources.context,

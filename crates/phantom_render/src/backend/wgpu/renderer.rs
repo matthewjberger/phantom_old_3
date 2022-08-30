@@ -3,6 +3,7 @@ use super::{
     world::{render::WorldRender, texture::Texture},
 };
 use crate::{Backend, Renderer};
+use phantom_config::Config;
 use phantom_dependencies::{
     anyhow,
     egui::ClippedPrimitive,
@@ -92,6 +93,7 @@ impl Renderer for WgpuRenderer {
     fn update(
         &mut self,
         world: &mut World,
+        config: &Config,
         gui_frame_resources: &mut GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let GuiFrameResources {
@@ -112,6 +114,7 @@ impl Renderer for WgpuRenderer {
     fn render_frame(
         &mut self,
         world: &mut World,
+        config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
         _context: &ContextWrapper<PossiblyCurrent, Window>,

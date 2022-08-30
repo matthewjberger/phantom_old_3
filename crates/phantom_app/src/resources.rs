@@ -5,6 +5,7 @@ use std::path::Path;
 
 pub use self::{input::*, system::*};
 
+use phantom_config::Config;
 use phantom_dependencies::{
     gilrs::Gilrs,
     glutin::{ContextWrapper, PossiblyCurrent},
@@ -48,13 +49,14 @@ pub enum ResourceError {
 type Result<T, E = ResourceError> = std::result::Result<T, E>;
 
 pub struct Resources<'a> {
-    pub renderer: &'a mut Box<dyn Renderer>,
-    pub world: &'a mut World,
+    pub config: &'a mut Config,
     pub context: &'a mut ContextWrapper<PossiblyCurrent, Window>,
-    pub gui: &'a mut Gui,
     pub gilrs: &'a mut Gilrs,
+    pub gui: &'a mut Gui,
     pub input: &'a mut Input,
+    pub renderer: &'a mut Box<dyn Renderer>,
     pub system: &'a mut System,
+    pub world: &'a mut World,
 }
 
 impl<'a> Resources<'a> {

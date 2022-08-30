@@ -1,4 +1,5 @@
 use crate::backend::{OpenGlRenderer, WgpuRenderer};
+use phantom_config::Config;
 use phantom_dependencies::{
     egui::ClippedPrimitive,
     egui_wgpu::renderer::ScreenDescriptor,
@@ -27,11 +28,13 @@ pub trait Renderer {
     fn update(
         &mut self,
         world: &mut World,
+        config: &Config,
         gui_frame_resources: &mut GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>>;
     fn render_frame(
         &mut self,
         world: &mut World,
+        config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
         context: &ContextWrapper<PossiblyCurrent, Window>,

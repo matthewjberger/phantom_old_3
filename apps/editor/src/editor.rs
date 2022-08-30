@@ -87,6 +87,7 @@ impl Editor {
                             self.commands
                                 .queue_command(Box::new(CloseMapCommand {}))
                                 .unwrap();
+                            self.selected_entities.clear();
                         }
 
                         if ui.button("Quit").clicked() {
@@ -257,6 +258,11 @@ impl Editor {
 impl State for Editor {
     fn label(&self) -> String {
         "Phantom Editor - Main".to_string()
+    }
+
+    fn on_start(&mut self, resources: &mut Resources) -> StateResult<()> {
+        resources.config.graphics.debug_grid_active = true;
+        Ok(())
     }
 
     fn update(&mut self, resources: &mut Resources) -> StateResult<Transition> {

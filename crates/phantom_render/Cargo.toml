@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bytemuck = { version = "1.12.1", features = ["derive"] }
+phantom_config = { path = "../phantom_config" }
 phantom_dependencies = { path = "../phantom_dependencies" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_world = { path = "../phantom_world" }

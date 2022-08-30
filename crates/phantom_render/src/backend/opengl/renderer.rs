@@ -1,7 +1,9 @@
 use super::{graphics::Graphics, grid::GridShader, world::WorldRender};
 use crate::Renderer;
+use phantom_config::Config;
 use phantom_dependencies::{
     anyhow::Result,
+    bincode::config,
     egui::ClippedPrimitive,
     egui_glow::{self, glow, Painter},
     egui_wgpu::renderer::ScreenDescriptor,
@@ -77,6 +79,7 @@ impl Renderer for OpenGlRenderer {
     fn update(
         &mut self,
         world: &mut World,
+        config: &Config,
         gui_frame_resources: &mut phantom_gui::GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let textures_delta = gui_frame_resources.textures_delta;
@@ -98,6 +101,7 @@ impl Renderer for OpenGlRenderer {
     fn render_frame(
         &mut self,
         world: &mut World,
+        config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
         context: &ContextWrapper<PossiblyCurrent, Window>,
@@ -105,7 +109,9 @@ impl Renderer for OpenGlRenderer {
         Graphics::clear_buffers();
         Graphics::clear_color(&glm::vec3(0.3, 0.3, 0.3));
 
-        self.grid.render();
+        if config.graphics.debug_grid_active {
+            self.grid.render();
+        }
 
         if let Some(world_render) = self.world_render.as_ref() {
             world_render.render(world, self.viewport.aspect_ratio())?;
