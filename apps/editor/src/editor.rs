@@ -6,7 +6,7 @@ use phantom::{
     dependencies::{
         anyhow::anyhow,
         egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui},
-        egui_gizmo::GizmoMode,
+        egui_gizmo::{GizmoMode, GizmoOrientation},
         glm,
         legion::EntityStore,
         log,
@@ -336,6 +336,12 @@ impl State for Editor {
             }
             (Some(VirtualKeyCode::S), ElementState::Pressed) => {
                 self.gizmo.mode = GizmoMode::Scale;
+            }
+            (Some(VirtualKeyCode::G), ElementState::Pressed) => {
+                self.gizmo.orientation = match self.gizmo.orientation {
+                    GizmoOrientation::Global => GizmoOrientation::Local,
+                    GizmoOrientation::Local => GizmoOrientation::Global,
+                }
             }
             _ => {}
         }

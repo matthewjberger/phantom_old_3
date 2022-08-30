@@ -8,12 +8,11 @@ use phantom_dependencies::{
     glutin::{ContextBuilder, CreationError},
     image::{self, io::Reader},
     log,
-    rapier3d::prelude::InteractionGroups,
     thiserror::Error,
     winit::{
         self,
         dpi::PhysicalSize,
-        event::{ElementState, Event, VirtualKeyCode, WindowEvent},
+        event::{Event, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
         window::{Fullscreen, Icon, WindowBuilder},
     },
@@ -72,8 +71,6 @@ pub enum ApplicationError {
 }
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
-
-const EDITOR_COLLISION_GROUP: InteractionGroups = InteractionGroups::new(0b1, 0b1);
 
 pub struct AppConfig {
     pub width: u32,

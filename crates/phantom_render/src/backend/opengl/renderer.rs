@@ -3,7 +3,6 @@ use crate::Renderer;
 use phantom_config::Config;
 use phantom_dependencies::{
     anyhow::Result,
-    bincode::config,
     egui::ClippedPrimitive,
     egui_glow::{self, glow, Painter},
     egui_wgpu::renderer::ScreenDescriptor,
@@ -79,7 +78,7 @@ impl Renderer for OpenGlRenderer {
     fn update(
         &mut self,
         world: &mut World,
-        config: &Config,
+        _config: &Config,
         gui_frame_resources: &mut phantom_gui::GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let textures_delta = gui_frame_resources.textures_delta;

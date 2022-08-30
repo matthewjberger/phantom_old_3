@@ -6,11 +6,11 @@ use phantom_dependencies::{
 
 pub struct GizmoWidget {
     pub mode: GizmoMode,
-    orientation: GizmoOrientation,
+    pub orientation: GizmoOrientation,
+    pub snap_angle: f32,
+    pub snap_distance: f32,
+    pub visuals: GizmoVisuals,
     last_gizmo_response: Option<GizmoResult>,
-    snap_angle: f32,
-    snap_distance: f32,
-    visuals: GizmoVisuals,
 }
 
 impl GizmoWidget {
@@ -18,7 +18,6 @@ impl GizmoWidget {
         Self {
             mode: GizmoMode::Rotate,
             orientation: GizmoOrientation::Global,
-            last_gizmo_response: None,
             snap_angle: egui_gizmo::DEFAULT_SNAP_ANGLE,
             snap_distance: egui_gizmo::DEFAULT_SNAP_DISTANCE,
             visuals: GizmoVisuals {
@@ -32,6 +31,7 @@ impl GizmoWidget {
                 inactive_alpha: 0.5,
                 highlight_alpha: 1.0,
             },
+            last_gizmo_response: None,
         }
     }
 
