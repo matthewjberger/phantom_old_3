@@ -69,7 +69,7 @@ pub fn graph_node(
     entities: &[Entity],
 ) {
     let entity = entities[gltf_node.index()];
-    let index = graph.add_node(entity);
+    let index = graph.add_root_node(entity);
     if parent_index != index {
         graph.add_edge(parent_index, index);
     }

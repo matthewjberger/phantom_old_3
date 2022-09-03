@@ -57,8 +57,15 @@ where
         self.0.raw_nodes().len()
     }
 
-    pub fn add_node(&mut self, node: T) -> NodeIndex {
+    pub fn add_root_node(&mut self, node: T) -> NodeIndex {
         self.0.add_node(node)
+    }
+
+    pub fn add_child(&mut self, parent_index: NodeIndex, value: T) -> NodeIndex {
+        log::info!("Adding child node to parent: {:#?}", parent_index);
+        let child_index = self.add_root_node(value);
+        self.add_edge(parent_index, child_index);
+        child_index
     }
 
     pub fn remove_node(&mut self, node_index: NodeIndex) {
@@ -164,6 +171,7 @@ where
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct SceneGraphNode<T> {
     pub value: T,
     pub offset: u32,
@@ -172,5 +180,166 @@ pub struct SceneGraphNode<T> {
 impl<T> SceneGraphNode<T> {
     pub fn new(value: T, offset: u32) -> Self {
         Self { value, offset }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_root_nodes() -> Result<()> {
+        let (scenegraph, _first_node_index, _second_node_index) = create_scenegraph();
+
+        let root_nodes = scenegraph.root_nodes()?;
+        assert_eq!(root_nodes.len(), 1);
+        assert_eq!(
+            root_nodes.iter().next(),
+            Some(&SceneGraphNode::<i32> {
+                value: FIRST_VALUE,
+                offset: 0
+            })
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_root_node_indices() -> Result<()> {
+        let (scenegraph, first_node_index, _second_node_index) = create_scenegraph();
+
+        let root_nodes = scenegraph.root_node_indices()?;
+        assert_eq!(root_nodes.len(), 1);
+        assert_eq!(root_nodes.iter().next(), Some(&first_node_index));
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_parent_of() -> Result<()> {
+        let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
+        assert_eq!(
+            scenegraph.get_parent_of(second_node_index),
+            Some(first_node_index),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn add_child() -> Result<()> {
+        let (mut scenegraph, first_node_index, second_node_index) = create_scenegraph();
+
+        let child_node_index = scenegraph.add_child(first_node_index, 18);
+        assert_eq!(scenegraph.number_of_nodes(), 3);
+        assert_eq!(
+            scenegraph.get_parent_of(child_node_index),
+            Some(first_node_index),
+        );
+
+        let second_child_node_index = scenegraph.add_child(second_node_index, 34);
+        assert_eq!(scenegraph.number_of_nodes(), 4);
+        assert_eq!(
+            scenegraph.get_parent_of(second_child_node_index),
+            Some(second_node_index),
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn remove_node() -> Result<()> {
+        let (mut scenegraph, _first_node_index, second_node_index) = create_scenegraph();
+
+        scenegraph.remove_node(second_node_index);
+        assert_eq!(scenegraph.number_of_nodes(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn collect_nodes() -> Result<()> {
+        let (scenegraph, _first_node_index, _second_node_index) = create_scenegraph();
+
+        let nodes = scenegraph.collect_nodes()?;
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(
+            nodes.iter().next(),
+            Some(&SceneGraphNode::<i32> {
+                value: FIRST_VALUE,
+                offset: 0
+            })
+        );
+        assert_eq!(
+            nodes.iter().skip(1).next(),
+            Some(&SceneGraphNode::<i32> {
+                value: SECOND_VALUE,
+                offset: 1
+            })
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn walk() -> Result<()> {
+        let (scenegraph, _first_node_index, _second_node_index) = create_scenegraph();
+
+        scenegraph.walk(|node_index| {
+            let expected_value = match node_index.index() {
+                0 => FIRST_VALUE,
+                1 => SECOND_VALUE,
+                value => panic!("An invalid node index was reached! {}", value),
+            };
+            assert_eq!(scenegraph[node_index], expected_value);
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn find_node() -> Result<()> {
+        let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
+        assert_eq!(scenegraph.find_node(FIRST_VALUE), Some(first_node_index));
+        assert_eq!(scenegraph.find_node(SECOND_VALUE), Some(second_node_index));
+        Ok(())
+    }
+
+    #[test]
+    fn has_neighbors() -> Result<()> {
+        let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
+        assert_eq!(scenegraph.has_neighbors(first_node_index), true);
+        assert_eq!(scenegraph.has_neighbors(second_node_index), true);
+        Ok(())
+    }
+
+    #[test]
+    fn has_parents() -> Result<()> {
+        let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
+        assert_eq!(scenegraph.has_parents(first_node_index), false);
+        assert_eq!(scenegraph.has_parents(second_node_index), true);
+        Ok(())
+    }
+
+    #[test]
+    fn has_children() -> Result<()> {
+        let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
+        assert_eq!(scenegraph.has_children(first_node_index), true);
+        assert_eq!(scenegraph.has_children(second_node_index), false);
+        Ok(())
+    }
+
+    const FIRST_VALUE: i32 = 4;
+    const SECOND_VALUE: i32 = 12;
+
+    fn create_scenegraph() -> (SceneGraph<i32>, NodeIndex, NodeIndex) {
+        // 0
+        //  \
+        //   1
+        let mut scenegraph = SceneGraph::new();
+        let first_node_index = scenegraph.add_root_node(4);
+        let second_node_index = scenegraph.add_root_node(12);
+        scenegraph.add_edge(first_node_index, second_node_index);
+        (scenegraph, first_node_index, second_node_index)
     }
 }

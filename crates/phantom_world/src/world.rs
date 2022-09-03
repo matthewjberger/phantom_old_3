@@ -144,7 +144,9 @@ impl World {
             },
         ));
 
-        self.scene.default_scenegraph_mut()?.add_node(camera_entity);
+        self.scene
+            .default_scenegraph_mut()?
+            .add_root_node(camera_entity);
 
         Ok(())
     }
@@ -165,7 +167,9 @@ impl World {
                 ..Default::default()
             },
         ));
-        self.scene.default_scenegraph_mut()?.add_node(light_entity);
+        self.scene
+            .default_scenegraph_mut()?
+            .add_root_node(light_entity);
         Ok(())
     }
 
