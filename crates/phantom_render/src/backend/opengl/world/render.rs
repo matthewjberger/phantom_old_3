@@ -7,7 +7,7 @@ use crate::backend::opengl::{
 use phantom_dependencies::{
     anyhow::Result, gl, legion::EntityStore, nalgebra_glm as glm, petgraph::graph::NodeIndex,
 };
-use phantom_world::{AlphaMode, Format, Material, MeshRender, SceneGraph, World};
+use phantom_world::{AlphaMode, EntitySceneGraph, Format, Material, MeshRender, World};
 use std::{collections::HashMap, ptr};
 
 #[derive(Hash, Eq, PartialEq, Debug)]
@@ -71,7 +71,7 @@ impl WorldRender {
     fn visit_node(
         &self,
         node_index: NodeIndex,
-        graph: &SceneGraph,
+        graph: &EntitySceneGraph,
         world: &World,
         alpha_mode: &AlphaMode,
     ) -> Result<()> {

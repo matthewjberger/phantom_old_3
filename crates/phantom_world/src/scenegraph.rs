@@ -4,7 +4,11 @@ use phantom_dependencies::{
     petgraph::{graph::WalkNeighbors, prelude::*},
     serde::{Deserialize, Serialize},
 };
-use std::ops::{Index, IndexMut};
+use std::{
+    cmp::PartialEq,
+    fmt::Debug,
+    ops::{Index, IndexMut},
+};
 
 use thiserror::Error;
 
@@ -25,26 +29,35 @@ type Result<T, E = SceneGraphError> = std::result::Result<T, E>;
 pub type Ecs = legion::World;
 pub type Entity = legion::Entity;
 
+pub type EntitySceneGraph = SceneGraph<Entity>;
+pub type EntitySceneGraphNode = SceneGraphNode<Entity>;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "phantom_dependencies::serde")]
-pub struct SceneGraph(pub Graph<Entity, ()>);
+pub struct SceneGraph<T: Copy + PartialEq + Debug>(pub Graph<T, ()>);
 
-impl Default for SceneGraph {
+impl<T> Default for SceneGraph<T>
+where
+    T: Copy + PartialEq + Debug,
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SceneGraph {
+impl<T> SceneGraph<T>
+where
+    T: Copy + PartialEq + Debug,
+{
     pub fn new() -> Self {
-        Self(Graph::<Entity, ()>::new())
+        Self(Graph::<T, ()>::new())
     }
 
     pub fn number_of_nodes(&self) -> usize {
         self.0.raw_nodes().len()
     }
 
-    pub fn add_node(&mut self, node: Entity) -> NodeIndex {
+    pub fn add_node(&mut self, node: T) -> NodeIndex {
         self.0.add_node(node)
     }
 
@@ -69,7 +82,7 @@ impl SceneGraph {
             .collect::<Vec<_>>())
     }
 
-    pub fn root_nodes(&self) -> Result<Vec<SceneGraphNode>> {
+    pub fn root_nodes(&self) -> Result<Vec<SceneGraphNode<T>>> {
         Ok(self
             .root_node_indices()?
             .iter()
@@ -78,7 +91,7 @@ impl SceneGraph {
             .collect::<Vec<_>>())
     }
 
-    pub fn collect_nodes(&self) -> Result<Vec<SceneGraphNode>> {
+    pub fn collect_nodes(&self) -> Result<Vec<SceneGraphNode<T>>> {
         let mut nodes = Vec::new();
         let mut linear_offset = 0;
         self.walk(|node_index| {
@@ -126,32 +139,38 @@ impl SceneGraph {
         self.0.neighbors_directed(index, direction).detach()
     }
 
-    pub fn find_node(&self, entity: Entity) -> Option<NodeIndex> {
-        self.0.node_indices().find(|i| self[*i] == entity)
+    pub fn find_node(&self, item: T) -> Option<NodeIndex> {
+        self.0.node_indices().find(|i| self[*i] == item)
     }
 }
 
-impl Index<NodeIndex> for SceneGraph {
-    type Output = Entity;
+impl<T> Index<NodeIndex> for SceneGraph<T>
+where
+    T: Copy + PartialEq + Debug,
+{
+    type Output = T;
 
     fn index(&self, index: NodeIndex) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl IndexMut<NodeIndex> for SceneGraph {
+impl<T> IndexMut<NodeIndex> for SceneGraph<T>
+where
+    T: Copy + PartialEq + Debug,
+{
     fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
         &mut self.0[index]
     }
 }
 
-pub struct SceneGraphNode {
-    pub entity: Entity,
+pub struct SceneGraphNode<T> {
+    pub value: T,
     pub offset: u32,
 }
 
-impl SceneGraphNode {
-    pub fn new(entity: Entity, offset: u32) -> Self {
-        Self { entity, offset }
+impl<T> SceneGraphNode<T> {
+    pub fn new(value: T, offset: u32) -> Self {
+        Self { value, offset }
     }
 }

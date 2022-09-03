@@ -1,9 +1,8 @@
 use crate::{
-    AlphaMode, Animation, BoundingBox, Camera, Channel, Ecs, Entity, Filter, Format, Geometry,
-    Interpolation, Joint, LightKind, Material, Mesh, MeshRender, MorphTarget, Name,
-    OrthographicCamera, PbrLight, PerspectiveCamera, Primitive, Projection, Sampler, Scene,
-    SceneGraph, Skin, Texture, TextureError, Transform, TransformationSet, Vertex, World,
-    WrappingMode,
+    AlphaMode, Animation, BoundingBox, Camera, Channel, Ecs, Entity, EntitySceneGraph, Filter,
+    Format, Geometry, Interpolation, Joint, LightKind, Material, Mesh, MeshRender, MorphTarget,
+    Name, OrthographicCamera, PbrLight, PerspectiveCamera, Primitive, Projection, Sampler, Scene,
+    Skin, Texture, TextureError, Transform, TransformationSet, Vertex, World, WrappingMode,
 };
 use phantom_dependencies::{
     glm,
@@ -52,14 +51,18 @@ pub enum GltfError {
 
 type Result<T, E = GltfError> = std::result::Result<T, E>;
 
-pub fn create_scene_graph(node: &gltf::Node, ecs: &mut Ecs, entities: &[Entity]) -> SceneGraph {
-    let mut node_graph = SceneGraph::new();
+pub fn create_scene_graph(
+    node: &gltf::Node,
+    ecs: &mut Ecs,
+    entities: &[Entity],
+) -> EntitySceneGraph {
+    let mut node_graph = EntitySceneGraph::new();
     graph_node(&mut node_graph, node, NodeIndex::new(0), ecs, entities);
     node_graph
 }
 
 pub fn graph_node(
-    graph: &mut SceneGraph,
+    graph: &mut EntitySceneGraph,
     gltf_node: &gltf::Node,
     parent_index: NodeIndex,
     ecs: &mut Ecs,

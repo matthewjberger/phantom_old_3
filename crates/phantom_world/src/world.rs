@@ -1,7 +1,8 @@
 use crate::{
     deserialize_ecs, scenegraph, serialize_ecs, world_as_bytes, world_from_bytes, Animation,
-    Camera, Ecs, Entity, Material, Name, PerspectiveCamera, Projection, RegistryError, RigidBody,
-    SceneGraph, SceneGraphError, SceneGraphNode, Texture, TextureError, Transform, WorldPhysics,
+    Camera, Ecs, Entity, EntitySceneGraph, EntitySceneGraphNode, Material, Name, PerspectiveCamera,
+    Projection, RegistryError, RigidBody, SceneGraphError, Texture, TextureError, Transform,
+    WorldPhysics,
 };
 use phantom_dependencies::{
     bmfont::{self, BMFont, OrdinateOrientation},
@@ -47,7 +48,7 @@ pub enum WorldError {
     FindActiveCamera,
 
     #[error("Failed to walk the scene graph!")]
-    WalkSceneGraph(#[source] scenegraph::SceneGraphError),
+    WalkEntitySceneGraph(#[source] scenegraph::SceneGraphError),
 
     #[error("Failed to lookup material at index: `{0}`")]
     LookupMaterial(usize),
@@ -178,7 +179,11 @@ impl World {
         Err(WorldError::FindActiveCamera)
     }
 
-    pub fn global_transform(&self, graph: &SceneGraph, index: NodeIndex) -> Result<glm::Mat4> {
+    pub fn global_transform(
+        &self,
+        graph: &EntitySceneGraph,
+        index: NodeIndex,
+    ) -> Result<glm::Mat4> {
         let entity = graph[index];
         let transform = match self.ecs.entry_ref(entity)?.get_component::<Transform>() {
             Ok(transform) => transform.matrix(),
@@ -204,7 +209,7 @@ impl World {
                     found = true;
                     Ok(())
                 })
-                .map_err(WorldError::WalkSceneGraph)?;
+                .map_err(WorldError::WalkEntitySceneGraph)?;
             if found {
                 break;
             }
@@ -276,7 +281,7 @@ impl World {
                     }
                     Ok(())
                 })
-                .map_err(WorldError::WalkSceneGraph)?;
+                .map_err(WorldError::WalkEntitySceneGraph)?;
         }
         Ok(lights)
     }
@@ -293,7 +298,7 @@ impl World {
                     }
                     Ok(())
                 })
-                .map_err(WorldError::WalkSceneGraph)?;
+                .map_err(WorldError::WalkEntitySceneGraph)?;
         }
         let mut joint_matrices = vec![glm::Mat4::identity(); number_of_joints];
         for graph in self.scene.graphs.iter() {
@@ -320,7 +325,7 @@ impl World {
                     }
                     Ok(())
                 })
-                .map_err(WorldError::WalkSceneGraph)?;
+                .map_err(WorldError::WalkEntitySceneGraph)?;
         }
         Ok(joint_matrices)
     }
@@ -486,7 +491,7 @@ impl World {
         Ok(())
     }
 
-    pub fn flatten_scenegraphs(&self) -> Vec<SceneGraphNode> {
+    pub fn flatten_scenegraphs(&self) -> Vec<EntitySceneGraphNode> {
         let mut offset = 0;
         self.scene
             .graphs
@@ -689,7 +694,7 @@ pub struct MouseRayConfiguration {
 #[serde(crate = "phantom_dependencies::serde")]
 pub struct Scene {
     pub name: String,
-    pub graphs: Vec<SceneGraph>,
+    pub graphs: Vec<EntitySceneGraph>,
     pub skybox: Option<usize>,
 }
 
@@ -697,14 +702,14 @@ impl Default for Scene {
     fn default() -> Self {
         Self {
             name: "Unnamed Scene".to_string(),
-            graphs: vec![SceneGraph::default()],
+            graphs: vec![EntitySceneGraph::default()],
             skybox: None,
         }
     }
 }
 
 impl Scene {
-    pub fn default_scenegraph_mut(&mut self) -> Result<&mut SceneGraph> {
+    pub fn default_scenegraph_mut(&mut self) -> Result<&mut EntitySceneGraph> {
         match self.graphs.iter_mut().next() {
             Some(graph) => Ok(graph),
             None => Err(WorldError::FindDefaultScenegraph(self.name.to_string())),

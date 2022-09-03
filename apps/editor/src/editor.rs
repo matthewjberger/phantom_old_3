@@ -15,7 +15,7 @@ use phantom::{
         winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode},
     },
     gui::GizmoWidget,
-    world::{Ecs, Entity, Name, RigidBody, SceneGraph, Transform},
+    world::{Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform},
 };
 
 pub struct Editor {
@@ -140,7 +140,7 @@ impl Editor {
     fn print_node(
         &mut self,
         ecs: &mut Ecs,
-        graph: &mut SceneGraph,
+        graph: &mut EntitySceneGraph,
         graph_index: usize,
         entity_index: NodeIndex,
         ui: &mut Ui,
