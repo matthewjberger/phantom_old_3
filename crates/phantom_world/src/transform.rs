@@ -22,6 +22,28 @@ impl Default for Transform {
     }
 }
 
+impl PartialEq for Transform {
+    fn eq(&self, other: &Self) -> bool {
+        let approximate = |x: f32, y: f32| (x - y).abs() < 0.001;
+        ![
+            // Translation
+            approximate(self.translation.x, other.translation.x),
+            approximate(self.translation.y, other.translation.y),
+            approximate(self.translation.z, other.translation.z),
+            // Rotation
+            approximate(self.rotation.i, other.rotation.i),
+            approximate(self.rotation.j, other.rotation.j),
+            approximate(self.rotation.k, other.rotation.k),
+            approximate(self.rotation.w, other.rotation.w),
+            // Scale
+            approximate(self.scale.x, other.scale.x),
+            approximate(self.scale.y, other.scale.y),
+            approximate(self.scale.z, other.scale.z),
+        ]
+        .contains(&false)
+    }
+}
+
 impl Transform {
     pub fn new(translation: glm::Vec3, rotation: glm::Quat, scale: glm::Vec3) -> Self {
         Self {
@@ -99,5 +121,30 @@ impl From<glm::Mat4> for Transform {
             rotation,
             scale,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+        let transform = Transform::default();
+        let matrix = transform.matrix();
+        assert_eq!(transform, Transform::from(matrix));
+        assert_eq!(matrix, Transform::from(matrix).matrix());
+    }
+
+    #[test]
+    fn round_trip_shear() {
+        let transform = Transform {
+            translation: glm::vec3(1.0, 2.0, 3.0),
+            rotation: glm::quat_angle_axis(1.0, &glm::Vec3::y()),
+            scale: glm::vec3(1.0, 2.0, 3.0),
+        };
+        let matrix = transform.matrix();
+        assert_eq!(transform, Transform::from(matrix));
+        assert_eq!(matrix, Transform::from(matrix).matrix());
     }
 }
