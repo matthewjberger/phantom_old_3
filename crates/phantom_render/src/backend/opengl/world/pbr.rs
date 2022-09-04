@@ -2,8 +2,6 @@ use crate::backend::opengl::{shader::ShaderProgram, texture::Texture};
 use phantom_dependencies::{anyhow::Result, nalgebra_glm as glm};
 use phantom_world::{LightKind, Material, Transform, World};
 
-use super::WorldShader;
-
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Light {
     pub direction: glm::Vec3,
@@ -22,7 +20,7 @@ pub struct Light {
 }
 
 impl Light {
-    pub fn from_node(transform: &Transform, light: &phantom_world::PbrLight) -> Self {
+    pub fn from_node(transform: &Transform, light: &phantom_world::Light) -> Self {
         let mut inner_cone_cos: f32 = 0.0;
         let mut outer_cone_cos: f32 = 0.0;
         let kind = match light.kind {
@@ -67,7 +65,7 @@ impl PbrShader {
 
     fn upload_lights(&self, world: &World) -> Result<()> {
         let world_lights = world
-            .components::<phantom_world::PbrLight>()
+            .components::<phantom_world::Light>()
             .unwrap()
             .iter()
             .map(|(transform, light)| Light::from_node(transform, light))
@@ -108,20 +106,22 @@ impl PbrShader {
             .set_uniform_matrix4x4("view", view.as_slice());
         Ok(())
     }
-}
 
-impl WorldShader for PbrShader {
-    fn use_program(&self) {
+    pub fn use_program(&self) {
         self.shader_program.use_program();
     }
 
-    fn update(&self, world: &World, aspect_ratio: f32) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn update(
+        &self,
+        world: &World,
+        aspect_ratio: f32,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.upload_lights(world)?;
         self.update_uniforms(world, aspect_ratio)?;
         Ok(())
     }
 
-    fn update_model_matrix(
+    pub fn update_model_matrix(
         &self,
         model_matrix: glm::Mat4,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -130,7 +130,7 @@ impl WorldShader for PbrShader {
         Ok(())
     }
 
-    fn update_material(
+    pub fn update_material(
         &self,
         material: &Material,
         textures: &[Texture],

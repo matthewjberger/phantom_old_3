@@ -1,4 +1,4 @@
-use crate::{Camera, Ecs, MeshRender, Name, PbrLight, RigidBody, Skin, Transform, World};
+use crate::{Camera, Ecs, Light, MeshRender, Name, RigidBody, Skin, Transform, World};
 use phantom_dependencies::{
     bincode,
     lazy_static::lazy_static,
@@ -35,7 +35,7 @@ lazy_static! {
         registry.register::<Camera>("camera".to_string());
         registry.register::<MeshRender>("mesh".to_string());
         registry.register::<Skin>("skin".to_string());
-        registry.register::<PbrLight>("light".to_string());
+        registry.register::<Light>("light".to_string());
         registry.register::<RigidBody>("rigid_body".to_string());
         Arc::new(RwLock::new(registry))
     };

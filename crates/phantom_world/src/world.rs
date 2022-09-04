@@ -161,7 +161,7 @@ impl World {
         let light_entity = self.ecs.push((
             Name("Default Light".to_string()),
             transform,
-            PbrLight {
+            Light {
                 color: glm::vec3(200.0, 200.0, 200.0),
                 kind: LightKind::Point,
                 ..Default::default()
@@ -723,22 +723,16 @@ impl Scene {
 
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(crate = "phantom_dependencies::serde")]
-pub struct BlinnPhongLight {
+pub struct Light {
+    pub color: glm::Vec3,
+    pub intensity: f32,
+    pub range: f32,
     pub ambient: glm::Vec3,
     pub constant: f32,
     pub diffuse: glm::Vec3,
     pub linear: f32,
     pub quadratic: f32,
     pub specular: glm::Vec3,
-    pub kind: LightKind,
-}
-
-#[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
-pub struct PbrLight {
-    pub color: glm::Vec3,
-    pub intensity: f32,
-    pub range: f32,
     pub kind: LightKind,
 }
 
