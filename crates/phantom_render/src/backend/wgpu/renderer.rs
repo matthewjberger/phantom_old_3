@@ -8,7 +8,6 @@ use phantom_dependencies::{
     anyhow,
     egui::ClippedPrimitive,
     egui_wgpu::renderer::ScreenDescriptor,
-    glutin::{ContextWrapper, PossiblyCurrent},
     log, pollster,
     raw_window_handle::HasRawWindowHandle,
     thiserror::Error,
@@ -16,7 +15,6 @@ use phantom_dependencies::{
         self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
         SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
     },
-    winit::window::Window,
 };
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
@@ -40,9 +38,6 @@ pub enum RendererError {
 
     #[error("Failed to update world!")]
     UpdateWorld(#[source] anyhow::Error),
-
-    #[error("The requested backend isn't supported by WGPU: `0`")]
-    MapRendererBackend(Backend),
 }
 
 type Result<T, E = RendererError> = std::result::Result<T, E>;
@@ -58,18 +53,14 @@ pub struct WgpuRenderer {
 }
 
 impl Renderer for WgpuRenderer {
-    fn sync_world(&mut self, world: &World) -> Result<(), Box<dyn std::error::Error>> {
+    fn load_world(&mut self, world: &World) -> Result<(), Box<dyn std::error::Error>> {
         self.world_render
             .load(&self.device, &self.queue, world)
             .map_err(RendererError::LoadWorld)?;
         Ok(())
     }
 
-    fn resize(
-        &mut self,
-        dimensions: [u32; 2],
-        _context: &ContextWrapper<PossiblyCurrent, Window>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn resize(&mut self, dimensions: [u32; 2]) -> Result<(), Box<dyn std::error::Error>> {
         log::info!(
             "Resizing renderer surface to: ({}, {})",
             dimensions[0],
@@ -117,7 +108,6 @@ impl Renderer for WgpuRenderer {
         _config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
-        _context: &ContextWrapper<PossiblyCurrent, Window>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let surface_texture = self
             .surface
@@ -287,7 +277,6 @@ fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
         Backend::Dx12 => WgpuBackend::Dx12,
         Backend::Metal => WgpuBackend::Metal,
         Backend::Vulkan => WgpuBackend::Vulkan,
-        unsupported_backend => return Err(RendererError::MapRendererBackend(*unsupported_backend)),
     };
     Ok(backend)
 }

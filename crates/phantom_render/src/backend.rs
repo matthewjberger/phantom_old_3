@@ -1,4 +1,3 @@
-mod opengl;
 mod wgpu;
 
-pub use self::{opengl::OpenGlRenderer, wgpu::WgpuRenderer};
+pub use self::wgpu::WgpuRenderer;

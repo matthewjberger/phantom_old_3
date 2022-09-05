@@ -8,7 +8,6 @@ pub use self::{input::*, system::*};
 use phantom_config::Config;
 use phantom_dependencies::{
     gilrs::Gilrs,
-    glutin::{ContextWrapper, PossiblyCurrent},
     legion::world::EntityAccessError,
     log, nalgebra_glm as glm,
     thiserror::Error,
@@ -50,7 +49,7 @@ type Result<T, E = ResourceError> = std::result::Result<T, E>;
 
 pub struct Resources<'a> {
     pub config: &'a mut Config,
-    pub context: &'a mut ContextWrapper<PossiblyCurrent, Window>,
+    pub window: &'a mut Window,
     pub gilrs: &'a mut Gilrs,
     pub gui: &'a mut Gui,
     pub input: &'a mut Input,
@@ -61,14 +60,13 @@ pub struct Resources<'a> {
 
 impl<'a> Resources<'a> {
     pub fn set_cursor_grab(&mut self, grab: CursorGrabMode) -> Result<()> {
-        self.context
-            .window()
+        self.window
             .set_cursor_grab(grab)
             .map_err(ResourceError::SetCursorGrabMode)
     }
 
     pub fn set_cursor_visible(&mut self, visible: bool) {
-        self.context.window().set_cursor_visible(visible)
+        self.window.set_cursor_visible(visible)
     }
 
     pub fn center_cursor(&mut self) -> Result<()> {
@@ -76,31 +74,27 @@ impl<'a> Resources<'a> {
     }
 
     pub fn set_cursor_position(&mut self, position: &glm::Vec2) -> Result<()> {
-        self.context
-            .window()
+        self.window
             .set_cursor_position(PhysicalPosition::new(position.x, position.y))
             .map_err(ResourceError::SetCursorPosition)
     }
 
     pub fn set_fullscreen(&mut self) {
-        self.context
-            .window()
-            .set_fullscreen(Some(Fullscreen::Borderless(
-                self.context.window().primary_monitor(),
-            )));
+        self.window
+            .set_fullscreen(Some(Fullscreen::Borderless(self.window.primary_monitor())));
     }
 
     pub fn close_map(&mut self) -> Result<()> {
         *self.world = World::new().map_err(ResourceError::ResetWorld)?;
         self.renderer
-            .sync_world(self.world)
+            .load_world(self.world)
             .map_err(ResourceError::SyncRenderer)
     }
 
     pub fn open_map(&mut self, path: impl AsRef<Path>) -> Result<()> {
         *self.world = World::load(path).map_err(ResourceError::LoadMap)?;
         self.renderer
-            .sync_world(self.world)
+            .load_world(self.world)
             .map_err(ResourceError::SyncRenderer)
     }
 
@@ -108,7 +102,7 @@ impl<'a> Resources<'a> {
         load_gltf(path, self.world).map_err(ResourceError::LoadGltfAsset)?;
         log::info!("Loaded gltf asset");
         self.renderer
-            .sync_world(self.world)
+            .load_world(self.world)
             .map_err(ResourceError::SyncRenderer)
     }
 }
