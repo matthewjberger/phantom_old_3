@@ -1,3 +1,3 @@
 mod wgpu;
 
-pub use self::wgpu::WgpuRenderer;
+pub(crate) use self::wgpu::WgpuRenderer;

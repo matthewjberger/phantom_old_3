@@ -32,18 +32,19 @@ pub enum RendererError {
 
 type Result<T, E = RendererError> = std::result::Result<T, E>;
 
-pub struct WgpuRenderer {
+pub(crate) struct WgpuRenderer {
     pub surface: Surface,
     pub device: Device,
     pub queue: Queue,
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
     pub depth_texture_view: wgpu::TextureView,
-    pub world_render: WorldRender,
+    pub world_render: Option<WorldRender>,
 }
 
 impl Renderer for WgpuRenderer {
-    fn load_world(&mut self, _world: &World) -> Result<(), Box<dyn std::error::Error>> {
+    fn load_world(&mut self, world: &World) -> Result<(), Box<dyn std::error::Error>> {
+        self.world_render = Some(WorldRender::new(&self.device, self.config.format, world));
         Ok(())
     }
 
@@ -78,14 +79,18 @@ impl Renderer for WgpuRenderer {
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
-        self.world_render
-            .update(&self.queue, self.aspect_ratio(), world);
+
+        let aspect_ratio = self.aspect_ratio();
+        if let Some(world_render) = self.world_render.as_mut() {
+            world_render.update(&self.queue, aspect_ratio, world);
+        }
+
         Ok(())
     }
 
     fn render_frame(
         &mut self,
-        _world: &mut World,
+        world: &mut World,
         _config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
@@ -132,7 +137,9 @@ impl Renderer for WgpuRenderer {
                 }),
             });
 
-            self.world_render.render(&mut renderpass);
+            if let Some(world_render) = self.world_render.as_ref() {
+                world_render.render(&mut renderpass, world);
+            }
         }
 
         self.gui
@@ -187,8 +194,6 @@ impl WgpuRenderer {
 
         let depth_texture_view = create_depth_texture(&config, &device);
 
-        let world_render = WorldRender::new(&device, config.format);
-
         Ok(Self {
             surface,
             device,
@@ -196,7 +201,7 @@ impl WgpuRenderer {
             config,
             gui,
             depth_texture_view,
-            world_render,
+            world_render: None,
         })
     }
 

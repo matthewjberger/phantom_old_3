@@ -152,7 +152,7 @@ impl World {
     }
 
     pub fn add_default_light(&mut self) -> Result<()> {
-        let position = glm::vec3(-4.0, 10.0, 0.0);
+        let position = glm::vec3(-4.0, 2.0, 0.0);
         let mut transform = Transform {
             translation: position,
             ..Default::default()
@@ -162,9 +162,7 @@ impl World {
             Name("Default Light".to_string()),
             transform,
             Light {
-                color: glm::vec3(200.0, 200.0, 200.0),
-                kind: LightKind::Point,
-                ..Default::default()
+                color: glm::vec3(1.0, 1.0, 1.0),
             },
         ));
         self.scene
@@ -274,20 +272,20 @@ impl World {
     pub fn components<T: Send + Sync + Copy + Clone + 'static>(
         &self,
     ) -> Result<Vec<(Transform, T)>> {
-        let mut lights = Vec::new();
+        let mut components = Vec::new();
         for graph in self.scene.graphs.iter() {
             graph
                 .walk(|node_index| {
                     let entity = graph[node_index];
                     let node_transform = self.global_transform(graph, node_index)?;
-                    if let Ok(light) = self.ecs.entry_ref(entity)?.get_component::<T>() {
-                        lights.push((Transform::from(node_transform), *light));
+                    if let Ok(component) = self.ecs.entry_ref(entity)?.get_component::<T>() {
+                        components.push((Transform::from(node_transform), *component));
                     }
                     Ok(())
                 })
                 .map_err(WorldError::WalkEntitySceneGraph)?;
         }
-        Ok(lights)
+        Ok(components)
     }
 
     pub fn joint_matrices(&self) -> Result<Vec<glm::Mat4>> {
@@ -725,15 +723,6 @@ impl Scene {
 #[serde(crate = "phantom_dependencies::serde")]
 pub struct Light {
     pub color: glm::Vec3,
-    pub intensity: f32,
-    pub range: f32,
-    pub ambient: glm::Vec3,
-    pub constant: f32,
-    pub diffuse: glm::Vec3,
-    pub linear: f32,
-    pub quadratic: f32,
-    pub specular: glm::Vec3,
-    pub kind: LightKind,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]

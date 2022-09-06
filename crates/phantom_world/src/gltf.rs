@@ -688,16 +688,18 @@ fn load_joints(
         .collect()
 }
 
+// TODO: Add support for other punctual light settings
 fn load_light(light: &gltf::khr_lights_punctual::Light) -> Light {
     Light {
-        color: glm::make_vec3(&light.color()),
-        intensity: light.intensity(),
-        range: light.range().unwrap_or(-1.0), // if no range is present, range is assumed to be infinite
-        kind: map_gltf_light_kind(light.kind()),
+        color: glm::Vec3::from(light.color()),
+        // intensity: light.intensity(),
+        // range: light.range().unwrap_or(-1.0), // if no range is present, range is assumed to be infinite
+        // kind: map_gltf_light_kind(light.kind()),
         ..Default::default()
     }
 }
 
+#[allow(dead_code)]
 fn map_gltf_light_kind(light: gltf::khr_lights_punctual::Kind) -> LightKind {
     match light {
         gltf::khr_lights_punctual::Kind::Directional => LightKind::Directional,
