@@ -1,11 +1,7 @@
-use super::{
-    gui::GuiRender,
-    world::{render::WorldRender, texture::Texture},
-};
+use super::{gui::GuiRender, texture::Texture};
 use crate::{Backend, Renderer};
 use phantom_config::Config;
 use phantom_dependencies::{
-    anyhow,
     egui::ClippedPrimitive,
     egui_wgpu::renderer::ScreenDescriptor,
     log, pollster,
@@ -32,12 +28,6 @@ pub enum RendererError {
 
     #[error("Failed to request a device!")]
     RequestDevice(#[source] RequestDeviceError),
-
-    #[error("Failed to load world!")]
-    LoadWorld(#[source] anyhow::Error),
-
-    #[error("Failed to update world!")]
-    UpdateWorld(#[source] anyhow::Error),
 }
 
 type Result<T, E = RendererError> = std::result::Result<T, E>;
@@ -48,15 +38,11 @@ pub struct WgpuRenderer {
     pub queue: Queue,
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
-    pub world_render: WorldRender,
     pub depth_texture: Texture,
 }
 
 impl Renderer for WgpuRenderer {
-    fn load_world(&mut self, world: &World) -> Result<(), Box<dyn std::error::Error>> {
-        self.world_render
-            .load(&self.device, &self.queue, world)
-            .map_err(RendererError::LoadWorld)?;
+    fn load_world(&mut self, _world: &World) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 
@@ -83,7 +69,7 @@ impl Renderer for WgpuRenderer {
 
     fn update(
         &mut self,
-        world: &mut World,
+        _world: &mut World,
         _config: &Config,
         gui_frame_resources: &mut GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -96,15 +82,12 @@ impl Renderer for WgpuRenderer {
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
-        self.world_render
-            .update(&self.queue, world, self.aspect_ratio())
-            .map_err(RendererError::UpdateWorld)?;
         Ok(())
     }
 
     fn render_frame(
         &mut self,
-        world: &mut World,
+        _world: &mut World,
         _config: &Config,
         paint_jobs: &[ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
@@ -126,7 +109,7 @@ impl Renderer for WgpuRenderer {
 
         {
             encoder.insert_debug_marker("Render scene");
-            let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -150,8 +133,6 @@ impl Renderer for WgpuRenderer {
                     stencil_ops: None,
                 }),
             });
-
-            self.world_render.render(&mut renderpass, world).unwrap();
         }
 
         self.gui
@@ -211,8 +192,6 @@ impl WgpuRenderer {
             "Depth Texture",
         );
 
-        let world_render = WorldRender::new(&device, config.format).unwrap();
-
         Ok(Self {
             surface,
             device,
@@ -220,11 +199,11 @@ impl WgpuRenderer {
             config,
             gui,
             depth_texture,
-            world_render,
         })
     }
 
-    pub fn aspect_ratio(&self) -> f32 {
+    #[allow(dead_code)]
+    fn aspect_ratio(&self) -> f32 {
         self.config.width as f32 / std::cmp::max(1, self.config.height) as f32
     }
 

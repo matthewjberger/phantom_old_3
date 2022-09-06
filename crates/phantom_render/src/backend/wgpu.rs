@@ -1,5 +1,5 @@
 mod gui;
 mod renderer;
-mod world;
+mod texture;
 
 pub use self::renderer::*;
