@@ -36,8 +36,7 @@ impl CommandList {
             .drain(..)
             .collect::<Vec<_>>()
             .into_iter()
-            .map(|command| self.execute(command, resources))
-            .collect::<Result<_>>()
+            .try_for_each(|command| self.execute(command, resources))
     }
 
     pub fn execute(

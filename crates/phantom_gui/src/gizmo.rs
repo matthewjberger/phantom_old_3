@@ -13,8 +13,8 @@ pub struct GizmoWidget {
     last_gizmo_response: Option<GizmoResult>,
 }
 
-impl GizmoWidget {
-    pub fn new() -> Self {
+impl Default for GizmoWidget {
+    fn default() -> Self {
         Self {
             mode: GizmoMode::Rotate,
             orientation: GizmoOrientation::Global,
@@ -33,6 +33,12 @@ impl GizmoWidget {
             },
             last_gizmo_response: None,
         }
+    }
+}
+
+impl GizmoWidget {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn render_mode_selection(&mut self, ui: &mut Ui) {

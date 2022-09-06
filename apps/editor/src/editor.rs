@@ -171,7 +171,7 @@ impl Editor {
         };
 
         let response = if graph.has_children(entity_index) {
-            egui::CollapsingHeader::new(header.to_string())
+            egui::CollapsingHeader::new(header)
                 .show(ui, |ui| {
                     let mut neighbors = graph.neighbors(entity_index, Outgoing);
                     while let Some(child) = neighbors.next_node(&graph.0) {
@@ -185,10 +185,10 @@ impl Editor {
                 .context_menu(context_menu)
         };
 
-        if response.clicked() {
-            if !self.selected_entities.contains(&entity) || self.selected_entities.len() > 0 {
-                self.selected_entities = vec![entity];
-            }
+        if response.clicked()
+            && (!self.selected_entities.contains(&entity) || !self.selected_entities.is_empty())
+        {
+            self.selected_entities = vec![entity];
         }
 
         if response.double_clicked() {

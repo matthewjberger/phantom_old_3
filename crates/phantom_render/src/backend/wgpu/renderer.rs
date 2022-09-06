@@ -1,4 +1,4 @@
-use super::gui::GuiRender;
+use super::{gui::GuiRender, world::WorldRender};
 use crate::{Backend, Renderer};
 use phantom_config::Config;
 use phantom_dependencies::{
@@ -39,6 +39,7 @@ pub struct WgpuRenderer {
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
     pub depth_texture_view: wgpu::TextureView,
+    pub world_render: WorldRender,
 }
 
 impl Renderer for WgpuRenderer {
@@ -64,7 +65,7 @@ impl Renderer for WgpuRenderer {
 
     fn update(
         &mut self,
-        _world: &mut World,
+        world: &mut World,
         _config: &Config,
         gui_frame_resources: &mut GuiFrameResources,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -77,6 +78,8 @@ impl Renderer for WgpuRenderer {
             .update_textures(&self.device, &self.queue, textures_delta);
         self.gui
             .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
+        self.world_render
+            .update(&self.queue, self.aspect_ratio(), world);
         Ok(())
     }
 
@@ -104,7 +107,7 @@ impl Renderer for WgpuRenderer {
 
         {
             encoder.insert_debug_marker("Render scene");
-            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -128,6 +131,8 @@ impl Renderer for WgpuRenderer {
                     stencil_ops: None,
                 }),
             });
+
+            self.world_render.render(&mut renderpass);
         }
 
         self.gui
@@ -180,7 +185,9 @@ impl WgpuRenderer {
 
         let gui = GuiRender::new(&device, config.format, 1);
 
-        let depth_texture = create_depth_texture(&config, &device);
+        let depth_texture_view = create_depth_texture(&config, &device);
+
+        let world_render = WorldRender::new(&device, config.format);
 
         Ok(Self {
             surface,
@@ -188,11 +195,11 @@ impl WgpuRenderer {
             queue,
             config,
             gui,
-            depth_texture_view: depth_texture,
+            depth_texture_view,
+            world_render,
         })
     }
 
-    #[allow(dead_code)]
     fn aspect_ratio(&self) -> f32 {
         self.config.width as f32 / std::cmp::max(1, self.config.height) as f32
     }

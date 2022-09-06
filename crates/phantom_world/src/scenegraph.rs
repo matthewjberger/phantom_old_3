@@ -171,7 +171,7 @@ where
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SceneGraphNode<T> {
     pub value: T,
     pub offset: u32,
