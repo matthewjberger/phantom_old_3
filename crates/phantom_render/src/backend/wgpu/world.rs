@@ -19,7 +19,7 @@ pub struct WorldRender {
 
 impl WorldRender {
     pub fn new(device: &Device, surface_format: TextureFormat) -> Self {
-        let (vertices, indices) = create_triangle();
+        let (vertices, indices) = create_cube();
         let geometry = Geometry::new(device, &vertices, &indices);
         let uniform = UniformBinding::new(device);
         let pipeline = create_pipeline(device, surface_format, &uniform);
@@ -39,7 +39,7 @@ impl WorldRender {
         renderpass.set_vertex_buffer(0, vertex_buffer_slice);
         renderpass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
 
-        renderpass.draw_indexed(0..3, 0, 0..1);
+        renderpass.draw_indexed(0..36, 0, 0..1);
     }
 
     pub fn update(&mut self, queue: &Queue, aspect_ratio: f32, world: &World) {
@@ -84,7 +84,7 @@ fn create_pipeline(
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
             strip_index_format: Some(wgpu::IndexFormat::Uint32),
-            front_face: wgpu::FrontFace::Cw,
+            front_face: wgpu::FrontFace::Ccw,
             cull_mode: None,
             polygon_mode: wgpu::PolygonMode::Fill,
             conservative: false,
@@ -119,12 +119,12 @@ fn create_pipeline(
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 4],
-    color: [f32; 4],
+    normal: [f32; 4],
 }
 
 impl Vertex {
-    pub fn new(position: [f32; 4], color: [f32; 4]) -> Self {
-        Self { position, color }
+    pub fn new(position: [f32; 4], normal: [f32; 4]) -> Self {
+        Self { position, normal }
     }
 
     pub fn vertex_attributes() -> Vec<VertexAttribute> {
@@ -204,42 +204,64 @@ impl UniformBinding {
     }
 }
 
-fn create_triangle() -> ([Vertex; 3], [u32; 3]) {
+#[allow(dead_code)]
+fn create_plane(size: f32) -> ([Vertex; 4], [u32; 6]) {
     let vertices = [
-        Vertex::new([1.0, -1.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
-        Vertex::new([-1.0, -1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
-        Vertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([size, -size, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([size, size, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([-size, -size, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([-size, size, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
     ];
-    let indices: [u32; 3] = [0, 1, 2]; // Clockwise winding order
+    let indices: [u32; 6] = [0, 1, 2, 2, 1, 3];
     (vertices, indices)
 }
 
-const SHADER_SOURCE: &str = "
-struct Uniform {
-    mvp: mat4x4<f32>,
-};
-@group(0) @binding(0)
-var<uniform> ubo: Uniform;
-struct VertexInput {
-    @location(0) position: vec4<f32>,
-    @location(1) color: vec4<f32>,
-};
-struct VertexOutput {
-    @builtin(position) position: vec4<f32>,
-    @location(0) color: vec4<f32>,
-};
-@vertex
-fn vertex_main(vert: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = vert.color;
-    out.position = ubo.mvp * vert.position;
-    return out;
-};
-@fragment
-fn fragment_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.color);
+#[allow(dead_code)]
+fn create_cube() -> ([Vertex; 24], [u32; 36]) {
+    let vertices = [
+        // top (0.0, 0.0, 1.0)
+        Vertex::new([-1.0, -1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([1.0, -1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        Vertex::new([-1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+        // bottom (0.0, 0.0, -1.0)
+        Vertex::new([-1.0, 1.0, -1.0, 1.0], [0.0, 0.0, -1.0, 1.0]),
+        Vertex::new([1.0, 1.0, -1.0, 1.0], [0.0, 0.0, -1.0, 1.0]),
+        Vertex::new([1.0, -1.0, -1.0, 1.0], [0.0, 0.0, -1.0, 1.0]),
+        Vertex::new([-1.0, -1.0, -1.0, 1.0], [0.0, 0.0, -1.0, 1.0]),
+        // right (1.0, 0.0, 0.0)
+        Vertex::new([1.0, -1.0, -1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([1.0, 1.0, -1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([1.0, 1.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([1.0, -1.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+        // left (-1.0, 0.0, 0.0)
+        Vertex::new([-1.0, -1.0, 1.0, 1.0], [-1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([-1.0, 1.0, 1.0, 1.0], [-1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([-1.0, 1.0, -1.0, 1.0], [-1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([-1.0, -1.0, -1.0, 1.0], [-1.0, 0.0, 0.0, 1.0]),
+        // front (0.0, 1.0, 0.0)
+        Vertex::new([1.0, 1.0, -1.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
+        Vertex::new([-1.0, 1.0, -1.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
+        Vertex::new([-1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
+        Vertex::new([1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
+        // back (0.0, -1.0, 0.0)
+        Vertex::new([1.0, -1.0, 1.0, 1.0], [0.0, -1.0, 0.0, 1.0]),
+        Vertex::new([-1.0, -1.0, 1.0, 1.0], [0.0, -1.0, 0.0, 1.0]),
+        Vertex::new([-1.0, -1.0, -1.0, 1.0], [0.0, -1.0, 0.0, 1.0]),
+        Vertex::new([1.0, -1.0, -1.0, 1.0], [0.0, -1.0, 0.0, 1.0]),
+    ];
+
+    let indices: [u32; 36] = [
+        0, 1, 2, 2, 3, 0, // top
+        4, 5, 6, 6, 7, 4, // bottom
+        8, 9, 10, 10, 11, 8, // right
+        12, 13, 14, 14, 15, 12, // left
+        16, 17, 18, 18, 19, 16, // front
+        20, 21, 22, 22, 23, 20, // back
+    ];
+
+    (vertices, indices)
 }
-";
 
 pub struct Geometry {
     pub vertex_buffer: Buffer,
@@ -274,3 +296,36 @@ impl Geometry {
         })
     }
 }
+
+const SHADER_SOURCE: &str = "
+struct Uniform {
+    mvp: mat4x4<f32>,
+};
+
+@group(0) @binding(0)
+var<uniform> ubo: Uniform;
+
+struct VertexInput {
+    @location(0) position: vec4<f32>,
+    @location(1) normal: vec4<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) normal: vec4<f32>,
+};
+
+@vertex
+fn vertex_main(vert: VertexInput) -> VertexOutput {
+    var out: VertexOutput;
+    out.normal = vert.normal;
+    out.position = ubo.mvp * vert.position;
+    return out;
+};
+
+@fragment
+fn fragment_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(0.2, 0.3, 0.4, 1.0);
+}
+
+";
