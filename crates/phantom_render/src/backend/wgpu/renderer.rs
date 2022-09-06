@@ -1,4 +1,4 @@
-use super::{gui::GuiRender, texture::Texture};
+use super::gui::GuiRender;
 use crate::{Backend, Renderer};
 use phantom_config::Config;
 use phantom_dependencies::{
@@ -38,7 +38,7 @@ pub struct WgpuRenderer {
     pub queue: Queue,
     pub config: SurfaceConfiguration,
     pub gui: GuiRender,
-    pub depth_texture: Texture,
+    pub depth_texture_view: wgpu::TextureView,
 }
 
 impl Renderer for WgpuRenderer {
@@ -58,12 +58,7 @@ impl Renderer for WgpuRenderer {
         self.config.width = dimensions[0];
         self.config.height = dimensions[1];
         self.surface.configure(&self.device, &self.config);
-        self.depth_texture = Texture::create_depth_texture(
-            &self.device,
-            dimensions[0],
-            dimensions[1],
-            "Depth Texture",
-        );
+        self.depth_texture_view = create_depth_texture(&self.config, &self.device);
         Ok(())
     }
 
@@ -125,7 +120,7 @@ impl Renderer for WgpuRenderer {
                     },
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_texture.view,
+                    view: &self.depth_texture_view,
                     depth_ops: Some(wgpu::Operations {
                         load: wgpu::LoadOp::Clear(1.0),
                         store: true,
@@ -174,7 +169,7 @@ impl WgpuRenderer {
             .first()
             .ok_or(RendererError::NoSupportedSwapchainFormat)?;
 
-        let config = wgpu::SurfaceConfiguration {
+        let config = SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: swapchain_format,
             width: viewport.width as _,
@@ -185,12 +180,7 @@ impl WgpuRenderer {
 
         let gui = GuiRender::new(&device, config.format, 1);
 
-        let depth_texture = Texture::create_depth_texture(
-            &device,
-            viewport.width as _,
-            viewport.height as _,
-            "Depth Texture",
-        );
+        let depth_texture = create_depth_texture(&config, &device);
 
         Ok(Self {
             surface,
@@ -198,7 +188,7 @@ impl WgpuRenderer {
             queue,
             config,
             gui,
-            depth_texture,
+            depth_texture_view: depth_texture,
         })
     }
 
@@ -258,4 +248,26 @@ fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
         Backend::Vulkan => WgpuBackend::Vulkan,
     };
     Ok(backend)
+}
+
+fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) -> wgpu::TextureView {
+    let size = wgpu::Extent3d {
+        width: config.width,
+        height: config.height,
+        depth_or_array_layers: 1,
+    };
+
+    let texture_descriptor = wgpu::TextureDescriptor {
+        label: Some("Depth Texture"),
+        size,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Depth32Float,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+    };
+
+    let texture = device.create_texture(&texture_descriptor);
+
+    texture.create_view(&wgpu::TextureViewDescriptor::default())
 }
