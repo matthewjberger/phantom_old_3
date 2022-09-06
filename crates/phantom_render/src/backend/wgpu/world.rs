@@ -19,7 +19,8 @@ pub struct WorldRender {
 
 impl WorldRender {
     pub fn new(device: &Device, surface_format: TextureFormat) -> Self {
-        let geometry = Geometry::new(device, &VERTICES, &INDICES);
+        let (vertices, indices) = create_triangle();
+        let geometry = Geometry::new(device, &vertices, &indices);
         let uniform = UniformBinding::new(device);
         let pipeline = create_pipeline(device, surface_format, &uniform);
         Self {
@@ -38,7 +39,7 @@ impl WorldRender {
         renderpass.set_vertex_buffer(0, vertex_buffer_slice);
         renderpass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
 
-        renderpass.draw_indexed(0..(INDICES.len() as _), 0, 0..1);
+        renderpass.draw_indexed(0..3, 0, 0..1);
     }
 
     pub fn update(&mut self, queue: &Queue, aspect_ratio: f32, world: &World) {
@@ -122,6 +123,10 @@ struct Vertex {
 }
 
 impl Vertex {
+    pub fn new(position: [f32; 4], color: [f32; 4]) -> Self {
+        Self { position, color }
+    }
+
     pub fn vertex_attributes() -> Vec<VertexAttribute> {
         vertex_attr_array![0 => Float32x4, 1 => Float32x4].to_vec()
     }
@@ -199,22 +204,15 @@ impl UniformBinding {
     }
 }
 
-const VERTICES: [Vertex; 3] = [
-    Vertex {
-        position: [1.0, -1.0, 0.0, 1.0],
-        color: [1.0, 0.0, 0.0, 1.0],
-    },
-    Vertex {
-        position: [-1.0, -1.0, 0.0, 1.0],
-        color: [0.0, 1.0, 0.0, 1.0],
-    },
-    Vertex {
-        position: [0.0, 1.0, 0.0, 1.0],
-        color: [0.0, 0.0, 1.0, 1.0],
-    },
-];
-
-const INDICES: [u32; 3] = [0, 1, 2]; // Clockwise winding order
+fn create_triangle() -> ([Vertex; 3], [u32; 3]) {
+    let vertices = [
+        Vertex::new([1.0, -1.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+        Vertex::new([-1.0, -1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]),
+        Vertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]),
+    ];
+    let indices: [u32; 3] = [0, 1, 2]; // Clockwise winding order
+    (vertices, indices)
+}
 
 const SHADER_SOURCE: &str = "
 struct Uniform {
