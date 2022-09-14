@@ -110,37 +110,36 @@ impl Renderer for WgpuRenderer {
                 label: Some("Render Encoder"),
             });
 
-        {
-            encoder.insert_debug_marker("Render scene");
-            let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_texture_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(1.0),
-                        store: true,
-                    }),
-                    stencil_ops: None,
-                }),
-            });
-
-            if let Some(world_render) = self.world_render.as_ref() {
-                world_render.render(&mut renderpass, world);
-            }
-        }
+        // {
+        //     encoder.insert_debug_marker("Render scene");
+        //     let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        //         label: Some("Render Pass"),
+        //         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+        //             view: &view,
+        //             resolve_target: None,
+        //             ops: wgpu::Operations {
+        //                 load: wgpu::LoadOp::Clear(wgpu::Color {
+        //                     r: 0.1,
+        //                     g: 0.2,
+        //                     b: 0.3,
+        //                     a: 1.0,
+        //                 }),
+        //                 store: true,
+        //             },
+        //         })],
+        //         depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+        //             view: &self.depth_texture_view,
+        //             depth_ops: Some(wgpu::Operations {
+        //                 load: wgpu::LoadOp::Clear(1.0),
+        //                 store: true,
+        //             }),
+        //             stencil_ops: None,
+        //         }),
+        //     });
+        //     if let Some(world_render) = self.world_render.as_ref() {
+        //         world_render.render(&mut renderpass, world);
+        //     }
+        // }
 
         self.gui
             .execute(&mut encoder, &view, paint_jobs, screen_descriptor, None);
