@@ -695,7 +695,6 @@ fn load_light(light: &gltf::khr_lights_punctual::Light) -> Light {
         // intensity: light.intensity(),
         // range: light.range().unwrap_or(-1.0), // if no range is present, range is assumed to be infinite
         // kind: map_gltf_light_kind(light.kind()),
-        ..Default::default()
     }
 }
 

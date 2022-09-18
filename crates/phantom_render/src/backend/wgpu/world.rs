@@ -90,7 +90,7 @@ impl WorldRender {
         let camera_position = glm::vec3_to_vec4(&camera_transform.translation);
 
         let lights = world.components::<phantom_world::Light>().unwrap();
-        let (transform, light) = lights.iter().next().unwrap();
+        let (transform, light) = lights.first().unwrap();
         let light = Light::new(transform.translation, light.color);
 
         self.uniform.upload_uniform_data(

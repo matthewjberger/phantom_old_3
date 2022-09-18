@@ -87,7 +87,7 @@ impl Default for AppConfig {
             width: 1024,
             height: 768,
             is_fullscreen: false,
-            title: "Phantom Editor".to_string(),
+            title: "Phantom App".to_string(),
             icon: None,
 
             #[cfg(target_os = "windows")]

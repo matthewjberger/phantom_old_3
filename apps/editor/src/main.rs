@@ -9,6 +9,7 @@ fn main() -> Result<(), ApplicationError> {
         Editor::default(),
         AppConfig {
             icon: Some("assets/icons/phantom.png".to_string()),
+            title: "Phantom Editor".to_string(),
             ..Default::default()
         },
     )
