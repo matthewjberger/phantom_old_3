@@ -138,7 +138,7 @@ impl Renderer for WgpuRenderer {
             });
 
             if let Some(world_render) = self.world_render.as_ref() {
-                world_render.render(&mut renderpass, world);
+                world_render.render(&mut renderpass, world)?;
             }
         }
 

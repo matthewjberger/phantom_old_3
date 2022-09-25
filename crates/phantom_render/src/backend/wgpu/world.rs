@@ -1,4 +1,5 @@
 use phantom_dependencies::{
+    anyhow::Result,
     legion::EntityStore,
     nalgebra_glm as glm,
     wgpu::{
@@ -11,7 +12,7 @@ use phantom_dependencies::{
 use phantom_world::{MeshRender, Vertex, World};
 use std::{
     borrow::Cow,
-    mem::{self, size_of},
+    mem::{self, size_of}, ops::Range,
 };
 
 pub(crate) struct WorldRender {
@@ -35,7 +36,9 @@ impl WorldRender {
         }
     }
 
-    pub fn render<'rpass>(&'rpass self, renderpass: &mut RenderPass<'rpass>, world: &World) {
+    pub fn render<'rpass>(&'rpass self, renderpass: &mut RenderPass<'rpass>, world: &World) -> Result<()> {
+        let jobs = create_jobs(&world)?;
+
         renderpass.set_pipeline(&self.pipeline);
         renderpass.set_bind_group(0, &self.uniform.bind_group, &[]);
 
@@ -43,44 +46,13 @@ impl WorldRender {
         renderpass.set_vertex_buffer(0, vertex_buffer_slice);
         renderpass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
 
-        let mut ubo_offset = 0;
-        for graph in world.scene.graphs.iter() {
-            graph
-                .walk(|node_index| {
-                    let entity = graph[node_index];
-                    let entry = world.ecs.entry_ref(entity)?;
-
-                    let mesh_name = match entry.get_component::<MeshRender>().ok() {
-                        Some(mesh_render) => &mesh_render.name,
-                        None => {
-                            ubo_offset += 1;
-                            return Ok(());
-                        }
-                    };
-
-                    let mesh = match world.geometry.meshes.get(mesh_name) {
-                        Some(mesh) => mesh,
-                        None => {
-                            ubo_offset += 1;
-                            return Ok(());
-                        }
-                    };
-
-                    let offset = (ubo_offset as wgpu::DynamicOffset)
-                        * (self.dynamic_uniform.alignment as wgpu::DynamicOffset);
-                    renderpass.set_bind_group(1, &self.dynamic_uniform.bind_group, &[offset]);
-
-                    for primitive in mesh.primitives.iter() {
-                        let start = primitive.first_index as u32;
-                        let end = start + (primitive.number_of_indices as u32);
-                        renderpass.draw_indexed(start..end, 0, 0..1);
-                    }
-
-                    ubo_offset += 1;
-                    Ok(())
-                })
-                .unwrap();
+        for job in jobs.iter() {
+            let offset = (job.mesh_uniform_offset as wgpu::DynamicOffset) * self.dynamic_uniform.alignment as wgpu::DynamicOffset;
+            renderpass.set_bind_group(1, &self.dynamic_uniform.bind_group, &[offset]);
+            renderpass.draw_indexed(job.index_range.clone(), 0, 0..1);
         }
+
+        Ok(())
     }
 
     pub fn update(&mut self, queue: &Queue, aspect_ratio: f32, world: &World) {
@@ -453,3 +425,51 @@ fn fragment_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return vec4<f32>(result, object_color.a);
 }
 ";
+
+#[derive(Default)]
+pub struct RenderJob {
+    pub index_range: Range<u32>,
+    pub mesh_uniform_offset: u32,
+}
+
+fn create_jobs(world: &World) -> Result<Vec<RenderJob>> {
+        let mut jobs = Vec::new();
+        let mut mesh_uniform_offset = 0;
+        for graph in world.scene.graphs.iter() {
+            graph
+                .walk(|node_index| {
+                    let entity = graph[node_index];
+                    let entry = world.ecs.entry_ref(entity)?;
+
+                    let mesh_name = match entry.get_component::<MeshRender>().ok() {
+                        Some(mesh_render) => &mesh_render.name,
+                        None => {
+                            mesh_uniform_offset += 1;
+                            return Ok(());
+                        }
+                    };
+
+                    let mesh = match world.geometry.meshes.get(mesh_name) {
+                        Some(mesh) => mesh,
+                        None => {
+                            mesh_uniform_offset += 1;
+                            return Ok(());
+                        }
+                    };
+
+                    for primitive in mesh.primitives.iter() {
+                        let start = primitive.first_index as u32;
+                        let job = RenderJob {
+                            index_range: start..(primitive.first_index + primitive.number_of_indices) as u32,
+                            mesh_uniform_offset,
+                        };
+                        jobs.push(job);
+                    }
+
+                    mesh_uniform_offset += 1;
+                    Ok(())
+                }).unwrap();
+        }
+
+        Ok(jobs)
+}
