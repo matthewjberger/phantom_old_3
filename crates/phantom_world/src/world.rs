@@ -117,6 +117,7 @@ impl World {
         self.scene = Scene::default();
         self.scene.name = "Main Scene".to_string();
         self.add_default_camera()?;
+        self.add_default_light()?;
         Ok(())
     }
 
