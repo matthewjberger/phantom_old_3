@@ -1,26 +1,23 @@
 use crate::{Input, Resources, State, StateMachine, System};
+use egui::FullOutput;
+use egui_wgpu::renderer::ScreenDescriptor;
+use gilrs::{self, Gilrs};
+use image::{self, io::Reader};
+use log;
 use phantom_config::Config;
-use phantom_dependencies::{
-    egui::FullOutput,
-    egui_wgpu::renderer::ScreenDescriptor,
-    env_logger,
-    gilrs::{self, Gilrs},
-    image::{self, io::Reader},
-    log,
-    thiserror::Error,
-    winit::{
-        self,
-        dpi::PhysicalSize,
-        error::OsError,
-        event::{Event, WindowEvent},
-        event_loop::{ControlFlow, EventLoop},
-        window::{Fullscreen, Icon, WindowBuilder},
-    },
-};
 use phantom_gui::{Gui, GuiFrameResources};
 use phantom_render::{create_renderer, Backend};
 use phantom_world::{Viewport, World, WorldError};
 use std::io;
+use thiserror::Error;
+use winit::{
+    self,
+    dpi::PhysicalSize,
+    error::OsError,
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::{Fullscreen, Icon, WindowBuilder},
+};
 
 #[derive(Error, Debug)]
 pub enum ApplicationError {
@@ -103,7 +100,6 @@ impl Default for AppConfig {
 }
 
 pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()> {
-    env_logger::init();
     log::info!("Phantom app started");
 
     let event_loop = EventLoop::new();

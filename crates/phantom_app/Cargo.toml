@@ -4,9 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+egui = "0.19.0"
+egui-wgpu = { version = "0.19.0", features = ["winit"] }
+gilrs = "0.9.0"
+image = "0.24.3"
+legion = "0.4.0"
+log = "0.4.17"
+nalgebra-glm = { version = "0.17.0", features = ["serde-serialize", "convert-bytemuck"] }
 phantom_config = { path = "../phantom_config" }
-phantom_dependencies = { path = "../phantom_dependencies" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_render = { path = "../phantom_render" }
 phantom_world = { path = "../phantom_world" }
 thiserror = "1.0.32"
+winit = "0.27.2"

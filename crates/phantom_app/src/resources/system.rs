@@ -1,11 +1,9 @@
-use phantom_dependencies::{
-    glm,
-    winit::{
-        dpi::PhysicalSize,
-        event::{Event, WindowEvent},
-    },
-};
+use nalgebra_glm as glm;
 use std::{cmp, time::Instant};
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event, WindowEvent},
+};
 
 pub struct System {
     pub window_dimensions: [u32; 2],

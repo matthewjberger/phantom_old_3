@@ -5,21 +5,20 @@ use std::path::Path;
 
 pub use self::{input::*, system::*};
 
+use gilrs::Gilrs;
+use legion::world::EntityAccessError;
+use log;
+use nalgebra_glm as glm;
 use phantom_config::Config;
-use phantom_dependencies::{
-    gilrs::Gilrs,
-    legion::world::EntityAccessError,
-    log, nalgebra_glm as glm,
-    thiserror::Error,
-    winit::{
-        dpi::PhysicalPosition,
-        error::ExternalError,
-        window::{CursorGrabMode, Fullscreen, Window},
-    },
-};
 use phantom_gui::Gui;
 use phantom_render::Renderer;
 use phantom_world::{load_gltf, GltfError, World, WorldError};
+use thiserror::Error;
+use winit::{
+    dpi::PhysicalPosition,
+    error::ExternalError,
+    window::{CursorGrabMode, Fullscreen, Window},
+};
 
 #[derive(Error, Debug)]
 pub enum ResourceError {

@@ -1,13 +1,11 @@
 use crate::Resources;
-use phantom_dependencies::{
-    gilrs::Event as GilrsEvent,
-    thiserror::Error,
-    winit::{
-        dpi::PhysicalSize,
-        event::{ElementState, Event, KeyboardInput, MouseButton},
-    },
-};
+use gilrs::Event as GilrsEvent;
 use std::path::Path;
+use thiserror::Error;
+use winit::{
+    dpi::PhysicalSize,
+    event::{ElementState, Event, KeyboardInput, MouseButton},
+};
 
 #[derive(Error, Debug)]
 pub enum StateMachineError {
