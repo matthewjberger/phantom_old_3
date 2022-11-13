@@ -1,7 +1,6 @@
-use phantom::{
-    app::Resources,
-    dependencies::{anyhow::Result, log},
-};
+use anyhow::Result;
+use log;
+use phantom::app::Resources;
 use std::path::PathBuf;
 
 pub trait Command {

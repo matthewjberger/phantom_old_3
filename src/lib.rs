@@ -6,10 +6,6 @@ pub mod audio {
     pub use phantom_audio::*;
 }
 
-pub mod dependencies {
-    pub use phantom_dependencies::*;
-}
-
 pub mod gui {
     pub use phantom_gui::*;
 }
