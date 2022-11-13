@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-phantom_dependencies = { path = "../phantom_dependencies" }
+serde = "1.0.144"
