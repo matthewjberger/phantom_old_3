@@ -8,6 +8,7 @@ default-run = "editor"
 anyhow = "1.0.62"
 egui = "0.19.0"
 egui-gizmo = { git = "https://github.com/matthewjberger/egui-gizmo" }
+env_logger = "0.9.3"
 legion = "0.4.0"
 log = "0.4.17"
 nalgebra-glm = { version = "0.17.0", features = ["serde-serialize", "convert-bytemuck"] }

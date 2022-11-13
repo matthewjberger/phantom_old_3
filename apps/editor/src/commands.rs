@@ -1,5 +1,4 @@
 use anyhow::Result;
-use log;
 use phantom::app::Resources;
 use std::path::PathBuf;
 

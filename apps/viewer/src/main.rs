@@ -4,6 +4,7 @@ use viewer::Viewer;
 mod viewer;
 
 fn main() -> Result<(), ApplicationError> {
+    env_logger::init();
     run(
         Viewer::default(),
         AppConfig {

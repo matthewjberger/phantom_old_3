@@ -5,6 +5,7 @@ mod commands;
 mod editor;
 
 fn main() -> Result<(), ApplicationError> {
+    env_logger::init();
     run(
         Editor::default(),
         AppConfig {
