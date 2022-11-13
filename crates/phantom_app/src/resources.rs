@@ -7,7 +7,6 @@ pub use self::{input::*, system::*};
 
 use gilrs::Gilrs;
 use legion::world::EntityAccessError;
-use log;
 use nalgebra_glm as glm;
 use phantom_config::Config;
 use phantom_gui::Gui;

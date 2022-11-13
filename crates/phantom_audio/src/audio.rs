@@ -1,4 +1,3 @@
-use rodio;
 use std::{io::BufReader, thread, time::Duration};
 
 #[derive(Default)]

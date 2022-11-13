@@ -42,7 +42,7 @@ impl WorldRender {
         renderpass: &mut RenderPass<'rpass>,
         world: &World,
     ) -> Result<()> {
-        let jobs = create_jobs(&world)?;
+        let jobs = create_jobs(world)?;
 
         renderpass.set_pipeline(&self.pipeline);
         renderpass.set_bind_group(0, &self.uniform.bind_group, &[]);

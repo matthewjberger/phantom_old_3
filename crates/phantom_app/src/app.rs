@@ -3,7 +3,6 @@ use egui::FullOutput;
 use egui_wgpu::renderer::ScreenDescriptor;
 use gilrs::{self, Gilrs};
 use image::{self, io::Reader};
-use log;
 use phantom_config::Config;
 use phantom_gui::{Gui, GuiFrameResources};
 use phantom_render::{create_renderer, Backend};

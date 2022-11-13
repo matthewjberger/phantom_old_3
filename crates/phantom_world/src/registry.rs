@@ -56,7 +56,7 @@ pub fn serialize_ecs<S>(ecs: &Ecs, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let registry = (&*COMPONENT_REGISTRY)
+    let registry = (*COMPONENT_REGISTRY)
         .read()
         .expect("Failed to get the component registry lock!");
     ecs.as_serializable(legion::any(), &*registry, &*ENTITY_SERIALIZER)
@@ -67,7 +67,7 @@ pub fn deserialize_ecs<'de, D>(deserializer: D) -> Result<Ecs, D::Error>
 where
     D: Deserializer<'de>,
 {
-    (&*COMPONENT_REGISTRY)
+    (*COMPONENT_REGISTRY)
         .read()
         .expect("Failed to get the component registry lock!")
         .as_deserialize(&*ENTITY_SERIALIZER)
