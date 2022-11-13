@@ -1,7 +1,5 @@
-use phantom::{
-    app::{MouseOrbit, Resources, State, StateResult, Transition},
-    dependencies::{anyhow::anyhow, log},
-};
+use anyhow::anyhow;
+use phantom::app::{MouseOrbit, Resources, State, StateResult, Transition};
 
 #[derive(Default)]
 pub struct Viewer {

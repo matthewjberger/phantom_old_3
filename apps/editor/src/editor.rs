@@ -1,22 +1,19 @@
 use crate::commands::{
     CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
 };
+use anyhow::anyhow;
+use egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui};
+use egui_gizmo::{GizmoMode, GizmoOrientation};
+use legion::EntityStore;
+use nalgebra_glm as glm;
+use petgraph::{graph::NodeIndex, Direction::Outgoing};
 use phantom::{
     app::{MouseOrbit, Resources, State, StateResult, Transition},
-    dependencies::{
-        anyhow::anyhow,
-        egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui},
-        egui_gizmo::{GizmoMode, GizmoOrientation},
-        glm,
-        legion::EntityStore,
-        log,
-        petgraph::{graph::NodeIndex, Direction::Outgoing},
-        rfd::FileDialog,
-        winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode},
-    },
     gui::GizmoWidget,
     world::{Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform},
 };
+use rfd::FileDialog;
+use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode};
 
 pub struct Editor {
     camera: MouseOrbit,
