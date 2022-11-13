@@ -9,9 +9,10 @@ use std::error::Error;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Backend {
-    Dx11,
-    Dx12,
-    Metal,
+    Dx11Wgpu,
+    Dx12Wgpu,
+    MetalWgpu,
+    VulkanWgpu,
     Vulkan,
 }
 

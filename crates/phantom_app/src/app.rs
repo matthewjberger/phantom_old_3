@@ -87,13 +87,13 @@ impl Default for AppConfig {
             icon: None,
 
             #[cfg(target_os = "windows")]
-            render_backend: Backend::Dx12,
+            render_backend: Backend::Dx12Wgpu,
 
             #[cfg(target_os = "macos")]
-            render_backend: Backend::Metal,
+            render_backend: Backend::MetalWgpu,
 
             #[cfg(target_os = "linux")]
-            render_backend: Backend::Vulkan,
+            render_backend: Backend::VulkanWgpu,
         }
     }
 }

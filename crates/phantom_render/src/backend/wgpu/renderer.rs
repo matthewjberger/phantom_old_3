@@ -23,6 +23,9 @@ pub enum RendererError {
     #[error("Failed to find a support swapchain format!")]
     NoSupportedSwapchainFormat,
 
+    #[error("The 'Vulkan' backend is not intended for wgpu! You probably meant to use the 'VulkanWgpu' backend.")]
+    IncorrectVulkanBackendVariant,
+
     #[error("Failed to request a device!")]
     RequestDevice(#[source] RequestDeviceError),
 }
@@ -250,13 +253,13 @@ impl WgpuRenderer {
 }
 
 fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
-    let backend = match backend {
-        Backend::Dx11 => WgpuBackend::Dx11,
-        Backend::Dx12 => WgpuBackend::Dx12,
-        Backend::Metal => WgpuBackend::Metal,
-        Backend::Vulkan => WgpuBackend::Vulkan,
-    };
-    Ok(backend)
+    match backend {
+        Backend::Dx11Wgpu => Ok(WgpuBackend::Dx11),
+        Backend::Dx12Wgpu => Ok(WgpuBackend::Dx12),
+        Backend::MetalWgpu => Ok(WgpuBackend::Metal),
+        Backend::VulkanWgpu => Ok(WgpuBackend::Vulkan),
+        Backend::Vulkan => Err(RendererError::IncorrectVulkanBackendVariant),
+    }
 }
 
 fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) -> wgpu::TextureView {
