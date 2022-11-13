@@ -1,10 +1,7 @@
-use phantom_dependencies::{
-    glm,
-    serde::{Deserialize, Serialize},
-};
+use nalgebra_glm as glm;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Camera {
     pub name: String,
     pub projection: Projection,
@@ -28,14 +25,12 @@ impl Camera {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum Projection {
     Perspective(PerspectiveCamera),
     Orthographic(OrthographicCamera),
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct PerspectiveCamera {
     pub aspect_ratio: Option<f32>,
     pub y_fov_rad: f32,
@@ -60,7 +55,6 @@ impl PerspectiveCamera {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct OrthographicCamera {
     pub x_mag: f32,
     pub y_mag: f32,

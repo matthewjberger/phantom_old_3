@@ -1,17 +1,14 @@
 use crate::{Camera, Ecs, Light, MeshRender, Name, RigidBody, Skin, Transform, World};
-use phantom_dependencies::{
-    bincode,
-    lazy_static::lazy_static,
-    legion::{
-        self,
-        serialize::{set_entity_serializer, Canon},
-        storage::Component,
-        Registry,
-    },
-    serde::{de::DeserializeSeed, Deserialize, Deserializer, Serialize, Serializer},
-    thiserror::Error,
+use lazy_static::lazy_static;
+use legion::{
+    self,
+    serialize::{set_entity_serializer, Canon},
+    storage::Component,
+    Registry,
 };
+use serde::{de::DeserializeSeed, Deserialize, Deserializer, Serialize, Serializer};
 use std::sync::{Arc, RwLock};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RegistryError {

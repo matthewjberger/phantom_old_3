@@ -4,28 +4,26 @@ use crate::{
     Projection, RegistryError, RigidBody, SceneGraphError, Texture, TextureError, Transform,
     WorldPhysics,
 };
-use phantom_dependencies::{
-    bmfont::{self, BMFont, OrdinateOrientation},
-    bytemuck, glm,
-    legion::{
-        world::{ComponentError, EntityAccessError},
-        EntityStore, IntoQuery,
-    },
-    nalgebra::{Point, Point3},
-    petgraph::prelude::*,
-    rapier3d::{
-        dynamics::RigidBodyBuilder,
-        geometry::{ColliderBuilder, InteractionGroups, Ray},
-        prelude::{QueryFilter, RigidBodyType},
-    },
-    serde::{Deserialize, Serialize},
-    thiserror::Error,
+use bmfont::{self, BMFont, OrdinateOrientation};
+use legion::{
+    world::{ComponentError, EntityAccessError},
+    EntityStore, IntoQuery,
 };
+use nalgebra::{Point, Point3};
+use nalgebra_glm as glm;
+use petgraph::prelude::*;
+use rapier3d::{
+    dynamics::RigidBodyBuilder,
+    geometry::{ColliderBuilder, InteractionGroups, Ray},
+    prelude::{QueryFilter, RigidBodyType},
+};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     marker::{Send, Sync},
     path::Path,
 };
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum WorldError {
@@ -90,7 +88,6 @@ pub enum WorldError {
 type Result<T, E = WorldError> = std::result::Result<T, E>;
 
 #[derive(Default, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct World {
     #[serde(serialize_with = "serialize_ecs", deserialize_with = "deserialize_ecs")]
     pub ecs: Ecs,
@@ -693,7 +690,6 @@ pub struct MouseRayConfiguration {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Scene {
     pub name: String,
     pub graphs: Vec<EntitySceneGraph>,
@@ -720,13 +716,11 @@ impl Scene {
 }
 
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Light {
     pub color: glm::Vec3,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum LightKind {
     Directional,
     Point,
@@ -743,27 +737,23 @@ impl Default for LightKind {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Skin {
     pub name: String,
     pub joints: Vec<Joint>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Joint {
     pub target: Entity,
     pub inverse_bind_matrix: glm::Mat4,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct MeshRender {
     pub name: String,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Mesh {
     pub name: String,
     pub primitives: Vec<Primitive>,
@@ -782,7 +772,6 @@ impl Mesh {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct BoundingBox {
     pub min: glm::Vec3,
     pub max: glm::Vec3,
@@ -829,7 +818,6 @@ impl BoundingBox {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Primitive {
     pub first_vertex: usize,
     pub first_index: usize,
@@ -841,7 +829,6 @@ pub struct Primitive {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct MorphTarget {
     pub positions: Vec<glm::Vec4>,
     pub normals: Vec<glm::Vec4>,
@@ -855,7 +842,6 @@ impl MorphTarget {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Geometry {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
@@ -871,7 +857,6 @@ impl Geometry {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Vertex {
     pub position: glm::Vec3,
     pub normal: glm::Vec3,
@@ -897,7 +882,6 @@ impl Default for Vertex {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct SdfFont {
     texture: Texture,
     font: BMFont,

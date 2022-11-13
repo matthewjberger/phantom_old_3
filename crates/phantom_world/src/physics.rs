@@ -1,20 +1,17 @@
-use phantom_dependencies::{
-    rapier3d::{
-        self,
-        dynamics::{CCDSolver, IntegrationParameters, RigidBodySet},
-        geometry::{BroadPhase, ColliderSet, NarrowPhase},
-        na::Vector3,
-        pipeline::{PhysicsPipeline, QueryPipeline},
-        prelude::{ImpulseJointSet, IslandManager, MultibodyJointSet, RigidBodyHandle},
-    },
-    serde::{Deserialize, Serialize},
+use rapier3d::{
+    self,
+    dynamics::{CCDSolver, IntegrationParameters, RigidBodySet},
+    geometry::{BroadPhase, ColliderSet, NarrowPhase},
+    na::Vector3,
+    pipeline::{PhysicsPipeline, QueryPipeline},
+    prelude::{ImpulseJointSet, IslandManager, MultibodyJointSet, RigidBodyHandle},
 };
+use serde::{Deserialize, Serialize};
 
 pub type Handle = rapier3d::dynamics::RigidBodyHandle;
 pub type ColliderHandle = rapier3d::geometry::ColliderHandle;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct RigidBody {
     pub handle: Handle,
     pub colliders: Vec<ColliderHandle>,
@@ -30,7 +27,6 @@ impl RigidBody {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct WorldPhysics {
     pub gravity: Vector3<f32>,
     pub integration_parameters: IntegrationParameters,

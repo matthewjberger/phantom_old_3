@@ -4,17 +4,15 @@ use crate::{
     MorphTarget, Name, OrthographicCamera, PerspectiveCamera, Primitive, Projection, Sampler,
     Scene, Skin, Texture, TextureError, Transform, TransformationSet, Vertex, World, WrappingMode,
 };
-use phantom_dependencies::{
-    glm,
-    gltf::{self, animation::util::ReadOutputs},
-    legion::{
-        world::{ComponentError, EntityAccessError},
-        EntityStore,
-    },
-    petgraph::prelude::*,
-    thiserror::Error,
+use gltf::{self, animation::util::ReadOutputs};
+use legion::{
+    world::{ComponentError, EntityAccessError},
+    EntityStore,
 };
+use nalgebra_glm as glm;
+use petgraph::prelude::*;
 use std::path::Path;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GltfError {

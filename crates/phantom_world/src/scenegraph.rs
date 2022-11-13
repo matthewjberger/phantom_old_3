@@ -1,15 +1,11 @@
-use phantom_dependencies::{
-    legion::{self, world::EntityAccessError},
-    log,
-    petgraph::{graph::WalkNeighbors, prelude::*},
-    serde::{Deserialize, Serialize},
-};
+use legion::{self, world::EntityAccessError};
+use petgraph::{graph::WalkNeighbors, prelude::*};
+use serde::{Deserialize, Serialize};
 use std::{
     cmp::PartialEq,
     fmt::Debug,
     ops::{Index, IndexMut},
 };
-
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -33,7 +29,6 @@ pub type EntitySceneGraph = SceneGraph<Entity>;
 pub type EntitySceneGraphNode = SceneGraphNode<Entity>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct SceneGraph<T: Copy + PartialEq + Debug>(pub Graph<T, ()>);
 
 impl<T> Default for SceneGraph<T>

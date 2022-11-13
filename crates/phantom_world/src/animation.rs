@@ -1,14 +1,11 @@
 use crate::{Ecs, Entity, Mesh, Transform};
-use phantom_dependencies::{
-    glm,
-    legion::{
-        world::{ComponentError, EntityAccessError},
-        EntityStore,
-    },
-    log,
-    serde::{Deserialize, Serialize},
-    thiserror::Error,
+use legion::{
+    world::{ComponentError, EntityAccessError},
+    EntityStore,
 };
+use nalgebra_glm as glm;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AnimationError {
@@ -22,7 +19,6 @@ pub enum AnimationError {
 type Result<T, E = AnimationError> = std::result::Result<T, E>;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Animation {
     pub name: String,
     pub time: f32,
@@ -120,7 +116,6 @@ impl Animation {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Channel {
     pub target: Entity,
     pub inputs: Vec<f32>,
@@ -129,7 +124,6 @@ pub struct Channel {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum Interpolation {
     Linear,
     Step,
@@ -137,7 +131,6 @@ pub enum Interpolation {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum TransformationSet {
     Translations(Vec<glm::Vec3>),
     Rotations(Vec<glm::Vec4>),

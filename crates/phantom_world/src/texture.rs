@@ -1,11 +1,9 @@
-use phantom_dependencies::{
-    image::{
-        codecs::hdr::HdrDecoder, io::Reader as ImageReader, DynamicImage, GenericImageView,
-        ImageBuffer, ImageError, Pixel, RgbImage,
-    },
-    nalgebra_glm as glm,
-    serde::{Deserialize, Serialize},
+use image::{
+    codecs::hdr::HdrDecoder, io::Reader as ImageReader, DynamicImage, GenericImageView,
+    ImageBuffer, ImageError, Pixel, RgbImage,
 };
+use nalgebra_glm as glm;
+use serde::{Deserialize, Serialize};
 use std::{io::BufReader, path::Path};
 use thiserror::Error;
 
@@ -37,7 +35,6 @@ type Result<T, E = TextureError> = std::result::Result<T, E>;
 
 // FIXME: Add mip levels
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Texture {
     pub pixels: Vec<u8>,
     pub format: Format,
@@ -170,7 +167,6 @@ impl Texture {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum Format {
     R8,
     R8G8,
@@ -197,7 +193,6 @@ pub enum Format {
 }
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Sampler {
     pub name: String,
     pub min_filter: Filter,
@@ -207,7 +202,6 @@ pub struct Sampler {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum WrappingMode {
     ClampToEdge,
     MirroredRepeat,
@@ -221,7 +215,6 @@ impl Default for WrappingMode {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum Filter {
     Nearest,
     Linear,
@@ -234,7 +227,6 @@ impl Default for Filter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Material {
     pub name: String,
     pub base_color_factor: glm::Vec4,
@@ -286,7 +278,6 @@ impl Default for Material {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub enum AlphaMode {
     Opaque = 1,
     Mask,

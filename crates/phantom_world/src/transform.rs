@@ -1,11 +1,8 @@
-use phantom_dependencies::{
-    glm,
-    nalgebra::{linalg::QR, Isometry3, Translation3, UnitQuaternion},
-    serde::{Deserialize, Serialize},
-};
+use nalgebra::{linalg::QR, Isometry3, Translation3, UnitQuaternion};
+use nalgebra_glm as glm;
+use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Transform {
     pub translation: glm::Vec3,
     pub rotation: glm::Quat,

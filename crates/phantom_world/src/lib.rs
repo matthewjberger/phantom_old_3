@@ -12,12 +12,10 @@ pub use self::{
     animation::*, camera::*, gltf::*, physics::*, registry::*, scenegraph::*, texture::*,
     transform::*, world::*,
 };
-use phantom_dependencies::serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Hidden;
 
 #[derive(Serialize, Deserialize)]
-#[serde(crate = "phantom_dependencies::serde")]
 pub struct Name(pub String);

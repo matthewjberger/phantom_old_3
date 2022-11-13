@@ -2,11 +2,9 @@ use super::{gui::GuiRender, world::WorldRender};
 use crate::{Backend, Renderer};
 use egui::ClippedPrimitive;
 use egui_wgpu::renderer::ScreenDescriptor;
-use log;
 use phantom_config::Config;
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
-use pollster;
 use raw_window_handle::HasRawWindowHandle;
 use thiserror::Error;
 use wgpu::{
