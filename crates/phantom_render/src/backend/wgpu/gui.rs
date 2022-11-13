@@ -1,8 +1,6 @@
-use phantom_dependencies::{
-    egui::{self, ClippedPrimitive, TexturesDelta},
-    egui_wgpu::renderer::{RenderPass, ScreenDescriptor},
-    wgpu::{self, Device, Queue},
-};
+use egui::{self, ClippedPrimitive, TexturesDelta};
+use egui_wgpu::renderer::{RenderPass, ScreenDescriptor};
+use wgpu::{self, Device, Queue};
 
 pub struct GuiRender {
     pub gui_renderpass: RenderPass,

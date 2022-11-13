@@ -1,11 +1,10 @@
 use crate::backend::WgpuRenderer;
+use egui::ClippedPrimitive;
+use egui_wgpu::renderer::ScreenDescriptor;
 use phantom_config::Config;
-use phantom_dependencies::{
-    egui::ClippedPrimitive, egui_wgpu::renderer::ScreenDescriptor,
-    raw_window_handle::HasRawWindowHandle,
-};
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
+use raw_window_handle::HasRawWindowHandle;
 use std::error::Error;
 
 #[derive(Debug, Copy, Clone)]

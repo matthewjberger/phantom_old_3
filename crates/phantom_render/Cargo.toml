@@ -4,9 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.62"
 bytemuck = { version = "1.12.1", features = ["derive"] }
+egui = "0.19.0"
+egui-wgpu = { version = "0.19.0", features = ["winit"] }
+legion = "0.4.0"
+log = "0.4.17"
+nalgebra-glm = { version = "0.17.0", features = ["serde-serialize", "convert-bytemuck"] }
 phantom_config = { path = "../phantom_config" }
-phantom_dependencies = { path = "../phantom_dependencies" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_world = { path = "../phantom_world" }
+pollster = "0.2.5"
+raw-window-handle = "0.4.3"
 thiserror = "1.0.32"
+wgpu = "0.13.1"

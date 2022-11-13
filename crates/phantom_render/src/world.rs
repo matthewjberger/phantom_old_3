@@ -1,4 +1,5 @@
-use phantom_dependencies::{anyhow::Result, legion::EntityStore};
+use anyhow::Result;
+use legion::EntityStore;
 use phantom_world::{MeshRender, World};
 use std::ops::Range;
 

@@ -1,17 +1,15 @@
-use phantom_dependencies::{
-    anyhow::Result,
-    nalgebra_glm as glm,
-    wgpu::{
-        self,
-        util::{BufferInitDescriptor, DeviceExt},
-        vertex_attr_array, Buffer, BufferAddress, Device, Face, Queue, RenderPass, RenderPipeline,
-        TextureFormat, VertexAttribute,
-    },
-};
+use anyhow::Result;
+use nalgebra_glm as glm;
 use phantom_world::{Vertex, World};
 use std::{
     borrow::Cow,
     mem::{self, size_of},
+};
+use wgpu::{
+    self,
+    util::{BufferInitDescriptor, DeviceExt},
+    vertex_attr_array, Buffer, BufferAddress, Device, Face, Queue, RenderPass, RenderPipeline,
+    TextureFormat, VertexAttribute,
 };
 
 use crate::world::create_jobs;

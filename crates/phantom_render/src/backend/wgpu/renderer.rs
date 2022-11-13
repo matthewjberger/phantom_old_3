@@ -1,19 +1,18 @@
 use super::{gui::GuiRender, world::WorldRender};
 use crate::{Backend, Renderer};
+use egui::ClippedPrimitive;
+use egui_wgpu::renderer::ScreenDescriptor;
+use log;
 use phantom_config::Config;
-use phantom_dependencies::{
-    egui::ClippedPrimitive,
-    egui_wgpu::renderer::ScreenDescriptor,
-    log, pollster,
-    raw_window_handle::HasRawWindowHandle,
-    thiserror::Error,
-    wgpu::{
-        self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
-        SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
-    },
-};
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
+use pollster;
+use raw_window_handle::HasRawWindowHandle;
+use thiserror::Error;
+use wgpu::{
+    self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
+    SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
+};
 
 #[derive(Error, Debug)]
 pub enum RendererError {
