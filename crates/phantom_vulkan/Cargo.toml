@@ -1,0 +1,24 @@
+[package]
+authors = ["Matthew J. Berger <matthewberger@nevada.unr.edu>"]
+edition = "2021"
+name = "phantom_vulkan"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.52"
+ash = "0.37.0"
+ash-window = "0.11.0"
+derive_builder = "0.10.2"
+phantom_shader = {path = "../phantom_shader"}
+phantom_world = {path = "../phantom_world"}
+gpu-allocator = "0.20.0"
+image = "0.23.14"
+log = "0.4.14"
+nalgebra-glm = {version = "0.16.0", features = ["serde-serialize"]}
+petgraph = "0.6.0"
+raw-window-handle = "0.4.3"
+
+[build-dependencies]
+phantom_shader = {path = "../phantom_shader"}
+log = "0.4.14"
+simplelog = {version = "0.11.2", features = ["termcolor"]}
