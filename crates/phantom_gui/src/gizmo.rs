@@ -1,8 +1,6 @@
-use phantom_dependencies::{
-    egui::{self, color_picker::Alpha, pos2, Align2, Color32, FontId, Slider, Ui, Widget},
-    egui_gizmo::{self, Gizmo, GizmoMode, GizmoOrientation, GizmoResult, GizmoVisuals},
-    nalgebra_glm as glm,
-};
+use egui::{self, color_picker::Alpha, pos2, Align2, Color32, FontId, Slider, Ui, Widget};
+use egui_gizmo::{self, Gizmo, GizmoMode, GizmoOrientation, GizmoResult, GizmoVisuals};
+use nalgebra_glm as glm;
 
 pub struct GizmoWidget {
     pub mode: GizmoMode,

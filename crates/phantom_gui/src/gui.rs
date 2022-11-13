@@ -1,9 +1,7 @@
-use phantom_dependencies::{
-    egui::{ClippedPrimitive, Context as GuiContext, FullOutput, TexturesDelta},
-    egui_wgpu::renderer::ScreenDescriptor,
-    egui_winit::State,
-    winit::{event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window},
-};
+use egui::{ClippedPrimitive, Context as GuiContext, FullOutput, TexturesDelta};
+use egui_wgpu::renderer::ScreenDescriptor;
+use egui_winit::State;
+use winit::{event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window};
 
 pub struct GuiFrameResources<'a> {
     pub textures_delta: &'a TexturesDelta,
