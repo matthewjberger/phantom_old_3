@@ -1,4 +1,4 @@
-use crate::backend::WgpuRenderer;
+use crate::backend::{VulkanRenderer, WgpuRenderer};
 use egui::ClippedPrimitive;
 use egui_wgpu::renderer::ScreenDescriptor;
 use phantom_config::Config;
@@ -39,6 +39,15 @@ pub fn create_renderer(
     window_handle: &impl HasRawWindowHandle,
     viewport: &Viewport,
 ) -> Result<Box<dyn Renderer>, Box<dyn Error>> {
-    let backend = WgpuRenderer::new(&window_handle, backend, viewport)?;
-    Ok(Box::new(backend) as Box<dyn Renderer>)
+    let renderer: Box<dyn Renderer> = match backend {
+        Backend::Dx11Wgpu | Backend::Dx12Wgpu | Backend::MetalWgpu | Backend::VulkanWgpu => {
+            let renderer = WgpuRenderer::new(&window_handle, backend, viewport)?;
+            Box::new(renderer) as _
+        }
+        Backend::Vulkan => {
+            let renderer = VulkanRenderer::new(&window_handle, *viewport)?;
+            Box::new(renderer) as _
+        }
+    };
+    Ok(renderer)
 }

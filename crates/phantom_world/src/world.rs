@@ -682,6 +682,17 @@ impl Viewport {
     }
 }
 
+impl From<[u32; 2]> for Viewport {
+    fn from(dimensions: [u32; 2]) -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            width: dimensions[0] as _,
+            height: dimensions[1] as _,
+        }
+    }
+}
+
 pub struct MouseRayConfiguration {
     pub viewport: Viewport,
     pub projection_matrix: glm::Mat4,
