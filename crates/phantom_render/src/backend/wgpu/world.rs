@@ -12,8 +12,6 @@ use wgpu::{
     TextureFormat, VertexAttribute,
 };
 
-use crate::world::create_jobs;
-
 pub(crate) struct WorldRender {
     pub geometry: Geometry,
     pub uniform: UniformBinding,
@@ -40,7 +38,7 @@ impl WorldRender {
         renderpass: &mut RenderPass<'rpass>,
         world: &World,
     ) -> Result<()> {
-        let jobs = create_jobs(world)?;
+        let metadata = world.get_metadata();
 
         renderpass.set_pipeline(&self.pipeline);
         renderpass.set_bind_group(0, &self.uniform.bind_group, &[]);
@@ -49,11 +47,11 @@ impl WorldRender {
         renderpass.set_vertex_buffer(0, vertex_buffer_slice);
         renderpass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
 
-        for job in jobs.iter() {
-            let offset = (job.entity_offset as wgpu::DynamicOffset)
+        for entity_metadata in metadata.iter() {
+            let offset = (entity_metadata.offset as wgpu::DynamicOffset)
                 * self.dynamic_uniform.alignment as wgpu::DynamicOffset;
             renderpass.set_bind_group(1, &self.dynamic_uniform.bind_group, &[offset]);
-            renderpass.draw_indexed(job.index_range.clone(), 0, 0..1);
+            renderpass.draw_indexed(entity_metadata.index_range.clone(), 0, 0..1);
         }
 
         Ok(())
