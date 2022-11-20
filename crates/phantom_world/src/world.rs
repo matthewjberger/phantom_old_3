@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     marker::{Send, Sync},
+    ops::Range,
     path::Path,
 };
 use thiserror::Error;
@@ -661,6 +662,38 @@ impl World {
         };
         Ok(model)
     }
+
+    pub fn get_metadata(&self) -> Vec<EntityMetadata> {
+        let mut metadata = Vec::new();
+        let mut offset = -1;
+        for graph in self.scene.graphs.iter() {
+            graph
+                .walk(|node_index| {
+                    offset += 1;
+
+                    let entity = graph[node_index];
+                    let entry = self.ecs.entry_ref(entity)?;
+
+                    let mesh_result = entry
+                        .get_component::<MeshRender>()
+                        .map(|mesh_render| self.geometry.meshes.get(&mesh_render.name));
+                    if let Ok(Some(mesh)) = mesh_result {
+                        for primitive in mesh.primitives.iter() {
+                            let start = primitive.first_index as u32;
+                            metadata.push(EntityMetadata {
+                                index_range: start
+                                    ..(primitive.first_index + primitive.number_of_indices) as u32,
+                                offset: offset as _,
+                            });
+                        }
+                    }
+
+                    Ok(())
+                })
+                .unwrap();
+        }
+        metadata
+    }
 }
 
 #[derive(Default, Copy, Clone)]
@@ -907,4 +940,10 @@ impl SdfFont {
             Texture::from_file(texture_path).map_err(WorldError::LoadSdfTextureFromFile)?;
         Ok(Self { texture, font })
     }
+}
+
+#[derive(Default)]
+pub struct EntityMetadata {
+    pub index_range: Range<u32>,
+    pub offset: u32,
 }
