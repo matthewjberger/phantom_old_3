@@ -6,7 +6,6 @@
         <title>Let&#x27;s Build a Game Engine!</title>
         <meta name="robots" content="noindex" />
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -29,13 +28,13 @@
     </head>
     <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "dark";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -51,7 +50,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -63,7 +62,7 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
             var sidebar = 'hidden';
             if (document.body.clientWidth >= 1080) {
@@ -125,7 +124,7 @@
                     </div>
                 </div>
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -322,8 +321,7 @@ pub mod render {
 
 pub mod world {
     pub use phantom_world::*;
-}
-</code></pre>
+}</code></pre>
 <p>This lets us access the public exports of all of our engine libraries, and applications will only need
 a single import of our main engine library.</p>
 <h3 id="handling-dependencies"><a class="header" href="#handling-dependencies">Handling Dependencies</a></h3>
@@ -372,8 +370,7 @@ cargo add thiserror -p phantom_dependencies
 <pre><code class="language-rust noplaypen">pub use anyhow;
 pub use env_logger;
 pub use log;
-pub use thiserror;
-</code></pre>
+pub use thiserror;</code></pre>
 <p>We will continue following this pattern whenever we add dependencies to the project!</p>
 <p>The dependencies we have added are:</p>
 <ul>
@@ -405,8 +402,7 @@ pub use thiserror;
 <p>In our <code>crates/phantom_app/lib.rs</code> we'll replace the contents of the file with the following:</p>
 <pre><code class="language-rust noplaypen">mod app;
 
-pub use self::app::*;
-</code></pre>
+pub use self::app::*;</code></pre>
 <p>Now we will create a file named <code>crates/phantom_app/app.rs</code> and begin building our application config.</p>
 <pre><code class="language-rust noplaypen">pub struct AppConfig {
     pub width: u32,
@@ -426,16 +422,14 @@ impl Default for AppConfig {
             icon: None,
         }
     }
-}
-</code></pre>
+}</code></pre>
 <h2 id="application-dependencies"><a class="header" href="#application-dependencies">Application Dependencies</a></h2>
 <p>Creating a window requires different boilerplate on each platform. Thankfully an excellent open source library for handling window creation named <a href="https://github.com/rust-windowing/winit">winit</a> exists.</p>
 <p>Let's add that to our <code>phantom_dependencies</code> project:</p>
 <pre><code class="language-bash">cargo add winit -p phantom_dependencies
 </code></pre>
 <p>And let's not forget to re-export it in <code>crates/phantom_dependencies/lib.rs</code>!</p>
-<pre><code class="language-rust noplaypen">pub use winit;
-</code></pre>
+<pre><code class="language-rust noplaypen">pub use winit;</code></pre>
 <h2 id="application-resources"><a class="header" href="#application-resources">Application Resources</a></h2>
 <p>Let's create another module to store resources necessary for the application to run.</p>
 <h3 id="declaring-the-resources-module"><a class="header" href="#declaring-the-resources-module">Declaring the Resources Module</a></h3>
@@ -446,8 +440,7 @@ mod resources;
 pub use self::{
     // ...
     resources::*,
-};
-</code></pre>
+};</code></pre>
 <h3 id="storing-application-resources"><a class="header" href="#storing-application-resources">Storing Application Resources</a></h3>
 <p>Create the file <code>phantom_app/src/resources.rs</code> with the following contents:</p>
 <pre><code class="language-rust noplaypen">use phantom_dependencies::winit::window::Window;
@@ -460,8 +453,7 @@ impl&lt;'a&gt; Resources&lt;'a&gt; {
     pub fn set_cursor_visible(&amp;mut self, visible: bool) {
         self.window.set_cursor_visible(visible)
     }
-}
-</code></pre>
+}</code></pre>
 <h2 id="application-creation"><a class="header" href="#application-creation">Application Creation</a></h2>
 <p>Now we can do something exciting and get a window visible on screen!</p>
 <p>First, run the following command to allow macros from <code>thiserror</code> to work for <code>phantom_app</code>:</p>
@@ -540,15 +532,13 @@ fn run_loop(event: &amp;Event&lt;()&gt;, control_flow: &amp;mut ControlFlow, res
     }
     Ok(())
 }
-
 </code></pre>
 <h3 id="loading-the-window-icon"><a class="header" href="#loading-the-window-icon">Loading the Window Icon</a></h3>
 <p>To load the window icon, we'll need a library for loading images. We'll use the <a href="https://crates.io/crates/image">image</a> crate.</p>
 <pre><code class="language-bash">cargo add image -p phantom_dependencies
 </code></pre>
 <p>Then re-export it in <code>phantom_dependencies/lib.rs</code>.</p>
-<pre><code class="language-rust noplaypen">pub use image;
-</code></pre>
+<pre><code class="language-rust noplaypen">pub use image;</code></pre>
 <p>We can now add errors for our icon loading code:</p>
 <pre><code class="language-rust noplaypen">    #[error(&quot;Failed to create icon file!&quot;)]
     CreateIcon(#[source] winit::window::BadIcon),
@@ -560,7 +550,6 @@ fn run_loop(event: &amp;Event&lt;()&gt;, control_flow: &amp;mut ControlFlow, res
 
     #[error(&quot;Failed to open icon file at path: {1}&quot;)]
     OpenIconFile(#[source] io::Error, String),
-
 </code></pre>
 <p>Now we can replace our <code>TODO</code> with the following code!</p>
 <pre><code class="language-rust noplaypen">if let Some(icon_path) = config.icon.as_ref() {
@@ -573,8 +562,7 @@ fn run_loop(event: &amp;Event&lt;()&gt;, control_flow: &amp;mut ControlFlow, res
     let icon = Icon::from_rgba(image.into_raw(), width, height)
         .map_err(ApplicationError::CreateIcon)?;
     window_builder = window_builder.with_window_icon(Some(icon));
-}
-</code></pre>
+}</code></pre>
 <h3 id="instantiating-the-editor"><a class="header" href="#instantiating-the-editor">Instantiating the Editor</a></h3>
 <p>Now that we've written the necessary window creation code in our library, we can setup our <code>editor</code> application.</p>
 <p>Replace the contents of <code>apps/editor/src/main.rs</code> with the following code.</p>
@@ -591,8 +579,7 @@ fn main() -&gt; Result&lt;()&gt; {
         icon: Some(&quot;assets/icon/phantom.png&quot;.to_string()),
         ..Default::default()
     })?)
-}
-</code></pre>
+}</code></pre>
 <p>Run the application again with <code>cargo run -r --bin editor</code> and you should see a blank window with our phantom logo!</p>
 <h3 id="viewing-the-console-logs"><a class="header" href="#viewing-the-console-logs">Viewing the console logs</a></h3>
 <p>To view the console logs, set the <code>RUST_LOG</code> environment variable to <code>debug</code>.</p>
@@ -614,8 +601,7 @@ fn main() -&gt; Result&lt;()&gt; {
 <pre><code class="language-rust noplaypen">...
 mod state;
 
-pub use self::{ ..., state::* };
-</code></pre>
+pub use self::{ ..., state::* };</code></pre>
 <p>Create a file named <code>crates/phantom_app/state.rs</code> with the following contents.</p>
 <pre><code class="language-rust noplaypen">use crate::Resources;
 use phantom_dependencies::{
@@ -713,8 +699,7 @@ pub trait State {
         Ok(Transition::None)
     }
 
-}
-</code></pre>
+}</code></pre>
 <p>Now, let's define a type for representing transitions between game states.</p>
 <pre><code class="language-rust noplaypen">pub enum Transition {
     None,
@@ -722,8 +707,7 @@ pub trait State {
     Push(Box&lt;dyn State&gt;),
     Switch(Box&lt;dyn State&gt;),
     Quit,
-}
-</code></pre>
+}</code></pre>
 <p>With these traits defined, we are ready to define our <code>StateMachine</code>.</p>
 <p>Note that the states are not public, as they should be accessed internally by the state machine itself. All methods on the state resolve to a <code>Transition</code> that is used to determine whether or not transition the state machine. These transitions should happen automatically from the user's perspective!</p>
 <pre><code class="language-rust noplaypen">
@@ -915,8 +899,7 @@ impl StateMachine {
         Ok(())
     }
 
-}
-</code></pre>
+}</code></pre>
 <h2 id="using-the-state-machine"><a class="header" href="#using-the-state-machine">Using the State Machine</a></h2>
 <p>To use the state machine, we'll want to modify our <code>crates/phantom_app/src/app.rs</code>.</p>
 <p>We should now create a state_machine and pass it to our <code>run_loop</code> function.</p>
@@ -938,8 +921,7 @@ fn run_loop(
     ...,
 ) {
     ...
-}
-</code></pre>
+}</code></pre>
 <p>This allows us to use the <code>state_machine</code> in our event handlers!</p>
 <pre><code class="language-rust noplaypen">
 #[derive(Error, Debug)]
@@ -1015,8 +997,7 @@ fn run_loop(
         _ =&gt; {}
     }
     Ok(())
-}
-</code></pre>
+}</code></pre>
 <h2 id="setting-up-the-editor"><a class="header" href="#setting-up-the-editor">Setting up the Editor</a></h2>
 <p>With gamestates in place, we can refactor our <code>apps/editor/src/main.rs</code> to the following.</p>
 <pre><code class="language-rust noplaypen">use phantom::{
@@ -1115,7 +1096,6 @@ fn main() -&gt; Result&lt;()&gt; {
         },
     )?)
 }
-
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tracking-input"><a class="header" href="#tracking-input">Tracking Input</a></h1>
 <p>Using the events we receive from Winit, we have a way of responding to events as they happen,
@@ -1260,8 +1240,7 @@ impl Mouse {
             _ =&gt; {}
         }
     }
-}
-</code></pre>
+}</code></pre>
 <p>This lets us easily track keystates and mouse information!</p>
 <h2 id="adding-a-system-resource"><a class="header" href="#adding-a-system-resource">Adding a System Resource</a></h2>
 <p>Let's add a file at <code>crates/phantom_app/src/resources/system.rs</code>.</p>
@@ -1323,7 +1302,6 @@ impl System {
         }
     }
 }
-
 </code></pre>
 <p>Now, we won't have to pollute our main game loop just to keep track of window dimensions and frame latency.</p>
 <h2 id="adding-resources"><a class="header" href="#adding-resources">Adding Resources</a></h2>
@@ -1341,8 +1319,7 @@ pub struct Resources&lt;'a&gt; {
     pub system: &amp;'a mut System,
 }
 
-...
-</code></pre>
+...</code></pre>
 <h2 id="instantiating-resources"><a class="header" href="#instantiating-resources">Instantiating Resources</a></h2>
 <p>Finally, we can instantiate our resources in our <code>crates/phantom_app/src/app.rs</code>.</p>
 <pre><code class="language-rust noplaypen">use crate::{Input, Resources, State, StateMachine, System};
@@ -1367,8 +1344,7 @@ pub fn run(...) {
         ...
     })
 }
-...
-</code></pre>
+...</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="gamepads"><a class="header" href="#gamepads">Gamepads</a></h1>
 <p>To handle gamepads, we will use the <a href="https://gitlab.com/gilrs-project/gilrs">gilrs</a> library. This library abstracts platform specific APIs to provide unified interfaces for working with gamepads and supports a wide variety of controllers.</p>
 <p>To integrate this library, let's first add <code>gilrs</code> as a dependency.</p>
@@ -1388,8 +1364,7 @@ use phantom_dependencies::{
 pub struct Resources&lt;'a&gt; {
     ...
     pub gilrs: &amp;'a mut Gilrs,
-}
-</code></pre>
+}</code></pre>
 <p>Next, we'll have to add an instance of <code>Gilrs</code> to the <code>Resources</code> that we declare in the application boilerplate in <code>crates/phantom_app/src/app.rs</code>.</p>
 <pre><code class="language-rust noplaypen">...
 
@@ -1441,8 +1416,7 @@ pub fn run_loop(...) {
     ...
 
 }
-...
-</code></pre>
+...</code></pre>
 <p>At this point, you'll notice that we haven't implemented anything in our state machine to handle gamepad events. Let's add a method to our <code>State</code> trait in <code>crates/phantom_app/src/state.rs</code>!</p>
 <pre><code class="language-rust noplaypen">...
 use phantom_dependencies::{
@@ -1461,8 +1435,7 @@ trait State {
     ) -&gt; Result&lt;Transition&gt; {
         Ok(Transition::None)
     }
-}
-</code></pre>
+}</code></pre>
 <p>With this declared, we can now command our state machine to forward gamepad events to the game states.</p>
 <p>Add the following method to our <code>StateMachine</code> in <code>crates/phantom_app/src/state.rs</code>.</p>
 <pre><code class="language-rust noplaypen">pub fn on_gamepad_event(&amp;mut self, resources: &amp;mut Resources, event: GilrsEvent) -&gt; StateResult&lt;()&gt; {
@@ -1473,8 +1446,7 @@ trait State {
         .active_state_mut()?
         .on_gamepad_event(resources, event)?;
     self.transition(transition, resources)
-}
-</code></pre>
+}</code></pre>
 <p>Let's make use of this new event handler by adding the following code to our editor at <code>apps/editor/src/main.rs</code>.</p>
 <pre><code class="language-rust noplaypen">use phantom::{
     ...
@@ -1498,8 +1470,7 @@ impl State for Editor {
         log::trace!(&quot;{:?} New gamepad event from {}: {:?}&quot;, time, id, event);
         Ok(Transition::None)
     }
-}
-</code></pre>
+}</code></pre>
 <p>Now, with a controller hooked up you'll be able to interact with your application!</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="rendering"><a class="header" href="#rendering">Rendering</a></h1>
 <p>For rendering, we'll use <a href="https://github.com/gfx-rs/wgpu">wgpu</a>, which is a safe and portable GPU abstraction in rust that implements the WebGPU API. Without this library, we would have write our own GPU abstraction and create separate backends for that abstraction. Supporting as many different platforms as possible for the sake of this engine provides flexibility. We could render on <code>Android</code> with <a href="https://www.vulkan.org/">Vulkan</a>, <code>Windows</code> with <a href="https://developer.nvidia.com/directx">DirectX</a>, <code>IOS</code> and <code>MacOS</code> with <a href="https://developer.apple.com/metal/">Metal</a>, or maybe even the web using <a href="https://www.khronos.org/webgl/">webgl</a> (and eventually <a href="https://www.w3.org/TR/webgpu/">webgpu</a>!).</p>
@@ -1510,15 +1481,13 @@ cargo add raw_window_handle@0.4.3 -p phantom_dependencies
 </code></pre>
 <p>Then, export these dependencies in <code>crates/phantom_dependencies/src/lib.rs</code>:</p>
 <pre><code class="language-rust noplaypen">pub use raw_window_handle;
-pub use wgpu;
-</code></pre>
+pub use wgpu;</code></pre>
 <h2 id="creating-the-render-module"><a class="header" href="#creating-the-render-module">Creating the Render Module</a></h2>
 <p>First, we'll modify <code>crates/phantom_render/src/lib.rs</code> to
 specify a <code>renderer</code> module.</p>
 <pre><code class="language-rust noplaypen">mod renderer;
 
-pub use self::renderer::*;
-</code></pre>
+pub use self::renderer::*;</code></pre>
 <p>Then in our new <code>renderer</code> module, we can begin creating the actual renderer.</p>
 <blockquote>
 <p>TODO: Break this up into sections and explain each section</p>
@@ -1724,7 +1693,6 @@ impl Renderer {
             .map_err(RendererError::RequestDevice)
     }
 }
-
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="using-the-renderer"><a class="header" href="#using-the-renderer">Using the Renderer</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-gui"><a class="header" href="#creating-a-gui">Creating a GUI</a></h1>
@@ -1752,18 +1720,18 @@ impl Renderer {
 
         </div>
 
-        <script type="text/javascript">
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
