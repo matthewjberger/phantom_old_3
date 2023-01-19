@@ -5,7 +5,7 @@ edition = "2021"
 default-run = "editor"
 
 [dependencies]
-anyhow = "1.0.62"
+anyhow = "1.0.68"
 egui = "0.19.0"
 egui-gizmo = { git = "https://github.com/matthewjberger/egui-gizmo" }
 env_logger = "0.9.3"
@@ -15,4 +15,4 @@ nalgebra-glm = { version = "0.17.0", features = ["serde-serialize", "convert-byt
 petgraph = { version = "0.6.2", features = ["serde-1"] }
 phantom = { path = "../.." }
 rfd = "0.10.0"
-winit = "0.27.2"
+winit = "0.27.5"
