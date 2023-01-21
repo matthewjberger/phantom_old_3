@@ -1,0 +1,23 @@
+[package]
+name = "phantom_vulkan"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.68"
+ash = "0.37.2"
+ash-window = "0.12.0"
+derive_builder = "0.12.0"
+phantom_shader = {path = "../phantom_shader"}
+phantom_world = {path = "../phantom_world"}
+gpu-allocator = "0.21.0"
+image = "0.24.5"
+log = "0.4.17"
+nalgebra-glm = {version = "0.18.0", features = ["serde-serialize"]}
+petgraph = "0.6.2"
+raw-window-handle = "0.5.0"
+
+[build-dependencies]
+phantom_shader = {path = "../phantom_shader"}
+log = "0.4.17"
+simplelog = {version = "0.12.0", features = ["termcolor"]}

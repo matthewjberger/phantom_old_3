@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.68"
-env_logger = "0.9.3"
+env_logger = "0.10.0"
 log = "0.4.17"
 phantom = { path = "../.." }

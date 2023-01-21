@@ -1,15 +1,21 @@
 use egui::{self, ClippedPrimitive, TexturesDelta};
-use egui_wgpu::renderer::{RenderPass, ScreenDescriptor};
+use egui_wgpu::renderer::{Renderer, ScreenDescriptor};
 use wgpu::{self, Device, Queue};
 
 pub struct GuiRender {
-    pub gui_renderpass: RenderPass,
+    pub gui_renderer: Renderer,
 }
 
 impl GuiRender {
-    pub fn new(device: &Device, output_format: wgpu::TextureFormat, msaa_samples: u32) -> Self {
-        let gui_renderpass = RenderPass::new(device, output_format, msaa_samples);
-        Self { gui_renderpass }
+    pub fn new(
+        device: &Device,
+        color_format: wgpu::TextureFormat,
+        depth_format: Option<wgpu::TextureFormat>,
+        msaa_samples: u32,
+    ) -> Self {
+        Self {
+            gui_renderer: Renderer::new(device, color_format, depth_format, msaa_samples),
+        }
     }
 
     pub fn update_textures(
@@ -19,11 +25,11 @@ impl GuiRender {
         textures_delta: &TexturesDelta,
     ) {
         for (id, image_delta) in &textures_delta.set {
-            self.gui_renderpass
+            self.gui_renderer
                 .update_texture(device, queue, *id, image_delta);
         }
         for id in &textures_delta.free {
-            self.gui_renderpass.free_texture(id);
+            self.gui_renderer.free_texture(id);
         }
     }
 
@@ -34,8 +40,9 @@ impl GuiRender {
         screen_descriptor: &ScreenDescriptor,
         paint_jobs: &[ClippedPrimitive],
     ) {
-        self.gui_renderpass
-            .update_buffers(device, queue, paint_jobs, screen_descriptor);
+        // TODO: Update the wgpu egui renderer
+        // self.gui_renderer
+        //     .update_buffers(device, queue, paint_jobs, screen_descriptor);
     }
 
     pub fn execute<'a>(
@@ -46,12 +53,13 @@ impl GuiRender {
         screen_descriptor: &'a ScreenDescriptor,
         clear_color: Option<wgpu::Color>,
     ) {
-        self.gui_renderpass.execute(
-            encoder,
-            color_attachment,
-            paint_jobs,
-            screen_descriptor,
-            clear_color,
-        );
+        // TODO: Update the wgpu egui renderer
+        // self.gui_renderer.execute(
+        //     encoder,
+        //     color_attachment,
+        //     paint_jobs,
+        //     screen_descriptor,
+        //     clear_color,
+        // );
     }
 }

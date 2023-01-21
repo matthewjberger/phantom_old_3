@@ -24,7 +24,7 @@ impl Gui {
 
     pub fn handle_window_event(&mut self, event: &WindowEvent) -> bool {
         let Gui { state, context } = self;
-        state.on_event(context, event)
+        state.on_event(context, event).consumed
     }
 
     pub fn begin_frame(&mut self, window: &Window) {

@@ -5,15 +5,15 @@ use egui_wgpu::renderer::ScreenDescriptor;
 use phantom_config::Config;
 use phantom_gui::GuiFrameResources;
 use phantom_world::{Viewport, World};
-use raw_window_handle::HasRawWindowHandle;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
 use wgpu::{
-    self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
-    SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
+    self, Backend as WgpuBackend, Backends, Device, Instance, Queue, RequestDeviceError, Surface,
+    SurfaceConfiguration, SurfaceError, TextureFormat, TextureViewDescriptor,
 };
 
 #[derive(Error, Debug)]
-pub enum RendererError {
+pub enum Error {
     #[error("Failed to get the current surface texture!")]
     GetSurfaceTexture(#[source] SurfaceError),
 
@@ -27,7 +27,7 @@ pub enum RendererError {
     RequestDevice(#[source] RequestDeviceError),
 }
 
-type Result<T, E = RendererError> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub(crate) struct WgpuRenderer {
     pub surface: Surface,
@@ -57,7 +57,8 @@ impl Renderer for WgpuRenderer {
         self.config.width = dimensions[0];
         self.config.height = dimensions[1];
         self.surface.configure(&self.device, &self.config);
-        self.depth_texture_view = create_depth_texture(&self.config, &self.device);
+        self.depth_texture_view =
+            create_depth_texture(&self.config, &self.device, &Self::DEPTH_FORMAT);
         Ok(())
     }
 
@@ -95,7 +96,7 @@ impl Renderer for WgpuRenderer {
         let surface_texture = self
             .surface
             .get_current_texture()
-            .map_err(RendererError::GetSurfaceTexture)?;
+            .map_err(Error::GetSurfaceTexture)?;
 
         let view = surface_texture
             .texture
@@ -150,22 +151,24 @@ impl Renderer for WgpuRenderer {
 }
 
 impl WgpuRenderer {
-    pub fn new(
-        window_handle: &impl HasRawWindowHandle,
+    const DEPTH_FORMAT: TextureFormat = TextureFormat::Depth32Float;
+
+    pub fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(
+        window_handle: &W,
         backend: &Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
         pollster::block_on(WgpuRenderer::new_async(window_handle, backend, viewport))
     }
 
-    async fn new_async(
-        window_handle: &impl HasRawWindowHandle,
+    async fn new_async<W: HasRawWindowHandle + HasRawDisplayHandle>(
+        window_handle: &W,
         backend: &Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
         let backend: Backends = map_backend(backend)?.into();
 
-        let instance = wgpu::Instance::new(backend);
+        let instance = Instance::new(backend);
 
         let surface = unsafe { instance.create_surface(window_handle) };
 
@@ -176,7 +179,7 @@ impl WgpuRenderer {
         let swapchain_format = *surface
             .get_supported_formats(&adapter)
             .first()
-            .ok_or(RendererError::NoSupportedSwapchainFormat)?;
+            .ok_or(Error::NoSupportedSwapchainFormat)?;
 
         let config = SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -184,12 +187,13 @@ impl WgpuRenderer {
             width: viewport.width as _,
             height: viewport.height as _,
             present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
         };
         surface.configure(&device, &config);
 
-        let gui = GuiRender::new(&device, config.format, 1);
+        let depth_texture_view = create_depth_texture(&config, &device, &Self::DEPTH_FORMAT);
 
-        let depth_texture_view = create_depth_texture(&config, &device);
+        let gui = GuiRender::new(&device, config.format, Some(Self::DEPTH_FORMAT), 1);
 
         Ok(Self {
             surface,
@@ -222,13 +226,13 @@ impl WgpuRenderer {
     }
 
     async fn create_adapter(
-        instance: &wgpu::Instance,
+        instance: &Instance,
         surface: &wgpu::Surface,
         backend: Backends,
     ) -> Result<wgpu::Adapter> {
         wgpu::util::initialize_adapter_from_env_or_default(instance, backend, Some(surface))
             .await
-            .ok_or(RendererError::NoSuitableGpuAdapters)
+            .ok_or(Error::NoSuitableGpuAdapters)
     }
 
     async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue)> {
@@ -245,7 +249,7 @@ impl WgpuRenderer {
                 None,
             )
             .await
-            .map_err(RendererError::RequestDevice)
+            .map_err(Error::RequestDevice)
     }
 }
 
@@ -259,7 +263,11 @@ fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
     Ok(backend)
 }
 
-fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) -> wgpu::TextureView {
+fn create_depth_texture(
+    config: &SurfaceConfiguration,
+    device: &wgpu::Device,
+    depth_format: &TextureFormat,
+) -> wgpu::TextureView {
     let size = wgpu::Extent3d {
         width: config.width,
         height: config.height,
@@ -272,7 +280,7 @@ fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) ->
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Depth32Float,
+        format: *depth_format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
     };
 
