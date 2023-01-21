@@ -13,7 +13,7 @@ use phantom::{
     world::{Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform},
 };
 use rfd::FileDialog;
-use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode};
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 pub struct Editor {
     camera: MouseOrbit,
@@ -294,26 +294,26 @@ impl State for Editor {
         Ok(Transition::None)
     }
 
-    fn on_mouse(
-        &mut self,
-        _resources: &mut Resources,
-        button: &MouseButton,
-        button_state: &ElementState,
-    ) -> StateResult<Transition> {
-        log::trace!("Mouse event: {:#?} {:#?}", button, button_state);
-        // if (MouseButton::Left, ElementState::Pressed) == (*button, *button_state) {
-        //     let interact_distance = f32::MAX;
-        //     let picked_entity = resources.world.pick_object(
-        //         &resources.mouse_ray_configuration()?,
-        //         interact_distance,
-        //         EDITOR_COLLISION_GROUP,
-        //     )?;
-        //     if let Some(entity) = picked_entity {
-        //         self.select_entity(entity, resources)?;
-        //     }
-        // }
-        Ok(Transition::None)
-    }
+    // fn on_mouse(
+    //     &mut self,
+    //     resources: &mut Resources,
+    //     button: &MouseButton,
+    //     button_state: &ElementState,
+    // ) -> StateResult<Transition> {
+    //     log::trace!("Mouse event: {:#?} {:#?}", button, button_state);
+    //     if (MouseButton::Left, ElementState::Pressed) == (*button, *button_state) {
+    //         let interact_distance = f32::MAX;
+    //         let picked_entity = resources.world.pick_object(
+    //             &resources.mouse_ray_configuration()?,
+    //             interact_distance,
+    //             EDITOR_COLLISION_GROUP,
+    //         )?;
+    //         if let Some(entity) = picked_entity {
+    //             self.select_entity(entity, resources)?;
+    //         }
+    //     }
+    //     Ok(Transition::None)
+    // }
 
     fn on_key(
         &mut self,

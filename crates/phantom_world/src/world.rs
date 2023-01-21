@@ -216,7 +216,7 @@ impl World {
         }
         if !found {
             // TODO: Maybe returning an error if the global transform of an entity that isn't in the scenegraph is better...
-            // Not found in the scenegraph, so the entity just have a local transform
+            // Not found in the scenegraph, so the entity just has a local transform
             transform = self
                 .ecs
                 .entry_ref(entity)?
