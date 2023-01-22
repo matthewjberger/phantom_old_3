@@ -97,12 +97,12 @@ impl WorldPhysics {
             &mut self.impulse_joints,
             &mut self.multibody_joints,
             &mut self.ccd_solver,
+            Some(&mut self.query_pipeline),
             &(),
             // Ignore contact events
             &(),
         );
 
-        self.query_pipeline
-            .update(&self.islands, &self.bodies, &self.colliders);
+        self.query_pipeline.update(&self.bodies, &self.colliders);
     }
 }

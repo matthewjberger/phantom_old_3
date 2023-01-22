@@ -33,25 +33,21 @@ impl WorldRender {
         }
     }
 
-    pub fn render<'rpass>(
-        &'rpass self,
-        renderpass: &mut RenderPass<'rpass>,
-        world: &World,
-    ) -> Result<()> {
+    pub fn render<'rp>(&'rp self, render_pass: &mut RenderPass<'rp>, world: &World) -> Result<()> {
         let metadata = world.get_metadata();
 
-        renderpass.set_pipeline(&self.pipeline);
-        renderpass.set_bind_group(0, &self.uniform.bind_group, &[]);
+        render_pass.set_pipeline(&self.pipeline);
+        render_pass.set_bind_group(0, &self.uniform.bind_group, &[]);
 
         let (vertex_buffer_slice, index_buffer_slice) = self.geometry.slices();
-        renderpass.set_vertex_buffer(0, vertex_buffer_slice);
-        renderpass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, vertex_buffer_slice);
+        render_pass.set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
 
         for entity_metadata in metadata.iter() {
             let offset = (entity_metadata.offset as wgpu::DynamicOffset)
                 * self.dynamic_uniform.alignment as wgpu::DynamicOffset;
-            renderpass.set_bind_group(1, &self.dynamic_uniform.bind_group, &[offset]);
-            renderpass.draw_indexed(entity_metadata.index_range.clone(), 0, 0..1);
+            render_pass.set_bind_group(1, &self.dynamic_uniform.bind_group, &[offset]);
+            render_pass.draw_indexed(entity_metadata.index_range.clone(), 0, 0..1);
         }
 
         Ok(())

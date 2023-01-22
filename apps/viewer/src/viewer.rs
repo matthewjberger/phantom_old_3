@@ -33,7 +33,7 @@ impl State for Viewer {
 
         resources.world.clear()?;
         resources.world.add_default_light()?;
-        resources.load_gltf_asset(path).unwrap();
+        resources.load_gltf(path).unwrap();
 
         Ok(Transition::None)
     }

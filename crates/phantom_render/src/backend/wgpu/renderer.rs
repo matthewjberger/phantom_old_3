@@ -1,15 +1,13 @@
 use super::{gui::GuiRender, world::WorldRender};
 use crate::{Backend, Renderer};
-use egui::ClippedPrimitive;
-use egui_wgpu::renderer::ScreenDescriptor;
 use phantom_config::Config;
-use phantom_gui::GuiFrameResources;
+use phantom_gui::GuiFrame;
 use phantom_world::{Viewport, World};
-use raw_window_handle::HasRawWindowHandle;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
 use wgpu::{
     self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
-    SurfaceConfiguration, SurfaceError, TextureViewDescriptor,
+    SurfaceConfiguration, SurfaceError, TextureFormat, TextureViewDescriptor,
 };
 
 #[derive(Error, Debug)]
@@ -57,31 +55,8 @@ impl Renderer for WgpuRenderer {
         self.config.width = dimensions[0];
         self.config.height = dimensions[1];
         self.surface.configure(&self.device, &self.config);
-        self.depth_texture_view = create_depth_texture(&self.config, &self.device);
-        Ok(())
-    }
-
-    fn update(
-        &mut self,
-        world: &mut World,
-        _config: &Config,
-        gui_frame_resources: &mut GuiFrameResources,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let GuiFrameResources {
-            textures_delta,
-            screen_descriptor,
-            paint_jobs,
-        } = gui_frame_resources;
-        self.gui
-            .update_textures(&self.device, &self.queue, textures_delta);
-        self.gui
-            .update_buffers(&self.device, &self.queue, screen_descriptor, paint_jobs);
-
-        let aspect_ratio = self.aspect_ratio();
-        if let Some(world_render) = self.world_render.as_mut() {
-            world_render.update(&self.queue, aspect_ratio, world);
-        }
-
+        self.depth_texture_view =
+            create_depth_texture(&self.config, &self.device, Self::DEPTH_FORMAT);
         Ok(())
     }
 
@@ -89,9 +64,34 @@ impl Renderer for WgpuRenderer {
         &mut self,
         world: &mut World,
         _config: &Config,
-        paint_jobs: &[ClippedPrimitive],
-        screen_descriptor: &ScreenDescriptor,
+        gui_frame: &mut GuiFrame,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+
+        let GuiFrame {
+            textures_delta,
+            screen_descriptor,
+            paint_jobs,
+        } = gui_frame;
+        self.gui
+            .update_textures(&self.device, &self.queue, textures_delta);
+        self.gui.update_buffers(
+            &self.device,
+            &self.queue,
+            &mut encoder,
+            paint_jobs,
+            screen_descriptor,
+        );
+
+        let aspect_ratio = self.aspect_ratio();
+        if let Some(world_render) = self.world_render.as_mut() {
+            world_render.update(&self.queue, aspect_ratio, world);
+        }
+
         let surface_texture = self
             .surface
             .get_current_texture()
@@ -101,15 +101,9 @@ impl Renderer for WgpuRenderer {
             .texture
             .create_view(&TextureViewDescriptor::default());
 
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
         {
             encoder.insert_debug_marker("Render scene");
-            let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -135,12 +129,12 @@ impl Renderer for WgpuRenderer {
             });
 
             if let Some(world_render) = self.world_render.as_ref() {
-                world_render.render(&mut renderpass, world)?;
+                world_render.render(&mut render_pass, world)?;
             }
-        }
 
-        self.gui
-            .execute(&mut encoder, &view, paint_jobs, screen_descriptor, None);
+            self.gui
+                .render(&mut render_pass, paint_jobs, screen_descriptor);
+        }
 
         self.queue.submit(std::iter::once(encoder.finish()));
         surface_texture.present();
@@ -150,16 +144,18 @@ impl Renderer for WgpuRenderer {
 }
 
 impl WgpuRenderer {
-    pub fn new(
-        window_handle: &impl HasRawWindowHandle,
+    const DEPTH_FORMAT: TextureFormat = TextureFormat::Depth32Float;
+
+    pub fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(
+        window_handle: &W,
         backend: &Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
         pollster::block_on(WgpuRenderer::new_async(window_handle, backend, viewport))
     }
 
-    async fn new_async(
-        window_handle: &impl HasRawWindowHandle,
+    async fn new_async<W: HasRawWindowHandle + HasRawDisplayHandle>(
+        window_handle: &W,
         backend: &Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
@@ -184,12 +180,13 @@ impl WgpuRenderer {
             width: viewport.width as _,
             height: viewport.height as _,
             present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
         };
         surface.configure(&device, &config);
 
-        let gui = GuiRender::new(&device, config.format, 1);
+        let gui = GuiRender::new(&device, config.format, Some(Self::DEPTH_FORMAT), 1);
 
-        let depth_texture_view = create_depth_texture(&config, &device);
+        let depth_texture_view = create_depth_texture(&config, &device, Self::DEPTH_FORMAT);
 
         Ok(Self {
             surface,
@@ -259,7 +256,11 @@ fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
     Ok(backend)
 }
 
-fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) -> wgpu::TextureView {
+fn create_depth_texture(
+    config: &SurfaceConfiguration,
+    device: &wgpu::Device,
+    format: wgpu::TextureFormat,
+) -> wgpu::TextureView {
     let size = wgpu::Extent3d {
         width: config.width,
         height: config.height,
@@ -272,7 +273,7 @@ fn create_depth_texture(config: &SurfaceConfiguration, device: &wgpu::Device) ->
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Depth32Float,
+        format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
     };
 

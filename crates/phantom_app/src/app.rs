@@ -4,7 +4,7 @@ use egui_wgpu::renderer::ScreenDescriptor;
 use gilrs::{self, Gilrs};
 use image::{self, io::Reader};
 use phantom_config::Config;
-use phantom_gui::{Gui, GuiFrameResources};
+use phantom_gui::{Gui, GuiFrame};
 use phantom_render::{create_renderer, Backend};
 use phantom_world::{Viewport, World, WorldError};
 use std::io;
@@ -52,9 +52,6 @@ pub enum ApplicationError {
 
     #[error("Failed to stop the state machine!")]
     StopStateMachine(#[source] Box<dyn std::error::Error>),
-
-    #[error("Failed to update the renderer!")]
-    UpdateRenderer(#[source] Box<dyn std::error::Error>),
 
     #[error("Failed to update the state machine!")]
     UpdateStateMachine(#[source] Box<dyn std::error::Error>),
@@ -240,7 +237,7 @@ fn run_loop(
                 .update(&mut resources)
                 .map_err(ApplicationError::UpdateStateMachine)?;
 
-            let mut gui_frame_resources = GuiFrameResources {
+            let mut gui_frame_resources = GuiFrame {
                 textures_delta: &textures_delta,
                 screen_descriptor: &screen_descriptor,
                 paint_jobs: &paint_jobs,
@@ -248,16 +245,7 @@ fn run_loop(
 
             resources
                 .renderer
-                .update(resources.world, resources.config, &mut gui_frame_resources)
-                .map_err(ApplicationError::UpdateRenderer)?;
-            resources
-                .renderer
-                .render_frame(
-                    resources.world,
-                    resources.config,
-                    &paint_jobs,
-                    &screen_descriptor,
-                )
+                .render_frame(resources.world, resources.config, &mut gui_frame_resources)
                 .map_err(ApplicationError::RenderFrame)?;
         }
 

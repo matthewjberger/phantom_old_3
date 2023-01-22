@@ -3,7 +3,7 @@ use egui_wgpu::renderer::ScreenDescriptor;
 use egui_winit::State;
 use winit::{event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window};
 
-pub struct GuiFrameResources<'a> {
+pub struct GuiFrame<'a> {
     pub textures_delta: &'a TexturesDelta,
     pub screen_descriptor: &'a ScreenDescriptor,
     pub paint_jobs: &'a [ClippedPrimitive],
@@ -24,7 +24,7 @@ impl Gui {
 
     pub fn handle_window_event(&mut self, event: &WindowEvent) -> bool {
         let Gui { state, context } = self;
-        state.on_event(context, event)
+        state.on_event(context, event).consumed
     }
 
     pub fn begin_frame(&mut self, window: &Window) {

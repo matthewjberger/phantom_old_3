@@ -96,7 +96,7 @@ impl<'a> Resources<'a> {
             .map_err(ResourceError::SyncRenderer)
     }
 
-    pub fn load_gltf_asset(&mut self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn load_gltf(&mut self, path: impl AsRef<Path>) -> Result<()> {
         load_gltf(path, self.world).map_err(ResourceError::LoadGltfAsset)?;
         log::info!("Loaded gltf asset");
         self.renderer

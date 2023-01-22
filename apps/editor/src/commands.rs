@@ -77,7 +77,7 @@ impl Command for LoadGltfAssetCommand {
 
     fn execute(&mut self, resources: &mut Resources) -> Result<()> {
         log::info!("Loading GLTF Asset: {:?}", &self.0);
-        resources.load_gltf_asset(&self.0).unwrap();
+        resources.load_gltf(&self.0).unwrap();
         Ok(())
     }
 

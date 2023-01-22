@@ -1,15 +1,21 @@
-use egui::{self, ClippedPrimitive, TexturesDelta};
-use egui_wgpu::renderer::{RenderPass, ScreenDescriptor};
+use egui::{self, TexturesDelta};
+use egui_wgpu::renderer::{Renderer, ScreenDescriptor};
 use wgpu::{self, Device, Queue};
 
 pub struct GuiRender {
-    pub gui_renderpass: RenderPass,
+    pub renderer: Renderer,
 }
 
 impl GuiRender {
-    pub fn new(device: &Device, output_format: wgpu::TextureFormat, msaa_samples: u32) -> Self {
-        let gui_renderpass = RenderPass::new(device, output_format, msaa_samples);
-        Self { gui_renderpass }
+    pub fn new(
+        device: &Device,
+        output_format: wgpu::TextureFormat,
+        depth_format: Option<wgpu::TextureFormat>,
+        msaa_samples: u32,
+    ) -> Self {
+        Self {
+            renderer: Renderer::new(device, output_format, depth_format, msaa_samples),
+        }
     }
 
     pub fn update_textures(
@@ -19,39 +25,33 @@ impl GuiRender {
         textures_delta: &TexturesDelta,
     ) {
         for (id, image_delta) in &textures_delta.set {
-            self.gui_renderpass
+            self.renderer
                 .update_texture(device, queue, *id, image_delta);
         }
         for id in &textures_delta.free {
-            self.gui_renderpass.free_texture(id);
+            self.renderer.free_texture(id);
         }
     }
 
     pub fn update_buffers(
         &mut self,
-        device: &Device,
-        queue: &Queue,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        paint_jobs: &[egui::epaint::ClippedPrimitive],
         screen_descriptor: &ScreenDescriptor,
-        paint_jobs: &[ClippedPrimitive],
     ) {
-        self.gui_renderpass
-            .update_buffers(device, queue, paint_jobs, screen_descriptor);
+        self.renderer
+            .update_buffers(device, queue, encoder, paint_jobs, screen_descriptor);
     }
 
-    pub fn execute<'a>(
-        &'a self,
-        encoder: &mut wgpu::CommandEncoder,
-        color_attachment: &wgpu::TextureView,
-        paint_jobs: &'a [egui::epaint::ClippedPrimitive],
-        screen_descriptor: &'a ScreenDescriptor,
-        clear_color: Option<wgpu::Color>,
+    pub fn render<'rp>(
+        &'rp self,
+        render_pass: &mut wgpu::RenderPass<'rp>,
+        paint_jobs: &[egui::epaint::ClippedPrimitive],
+        screen_descriptor: &ScreenDescriptor,
     ) {
-        self.gui_renderpass.execute(
-            encoder,
-            color_attachment,
-            paint_jobs,
-            screen_descriptor,
-            clear_color,
-        );
+        self.renderer
+            .render(render_pass, paint_jobs, screen_descriptor);
     }
 }

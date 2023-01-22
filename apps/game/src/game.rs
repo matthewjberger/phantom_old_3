@@ -19,7 +19,7 @@ impl State for Game {
 
     fn on_start(&mut self, resources: &mut Resources) -> StateResult<()> {
         resources.world.add_default_light()?;
-        resources.open_map("assets/models/blocks.pha").unwrap();
+        resources.load_gltf("assets/models/blocklevel.glb").unwrap();
 
         {
             let position = glm::vec3(0.0, 1.0, 0.0);

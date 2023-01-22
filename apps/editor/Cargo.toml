@@ -6,12 +6,12 @@ default-run = "editor"
 
 [dependencies]
 anyhow = "1.0.68"
-egui = "0.19.0"
-egui-gizmo = { git = "https://github.com/matthewjberger/egui-gizmo" }
-env_logger = "0.9.3"
+egui = "0.20.1"
+egui-gizmo = "0.9.0"
+env_logger = "0.10.0"
 legion = "0.4.0"
 log = "0.4.17"
-nalgebra-glm = { version = "0.17.0", features = ["serde-serialize", "convert-bytemuck"] }
+nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
 petgraph = { version = "0.6.2", features = ["serde-1"] }
 phantom = { path = "../.." }
 rfd = "0.10.0"
