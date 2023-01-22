@@ -1,6 +1,6 @@
-on: 
-  pull_request:
-    branches: [develop]
+on:
+  push:
+    branches: [main]
 
 name: Phantom CI
 
@@ -44,4 +44,3 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-
