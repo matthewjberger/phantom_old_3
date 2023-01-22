@@ -15,7 +15,7 @@ use petgraph::prelude::*;
 use rapier3d::{
     dynamics::RigidBodyBuilder,
     geometry::{ColliderBuilder, InteractionGroups, Ray},
-    prelude::{QueryFilter, RigidBodyType},
+    prelude::{Collider, QueryFilter, RigidBodyType},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -340,19 +340,7 @@ impl World {
         let collider = ColliderBuilder::cylinder(half_height, radius)
             .collision_groups(collision_groups)
             .build();
-
-        let rigid_body_handle = self
-            .ecs
-            .entry_ref(entity)?
-            .get_component::<RigidBody>()?
-            .handle;
-
-        self.physics.colliders.insert_with_parent(
-            collider,
-            rigid_body_handle,
-            &mut self.physics.bodies,
-        );
-
+        self.insert_collider(entity, collider)?;
         Ok(())
     }
 
@@ -368,20 +356,11 @@ impl World {
         };
         let entry = self.ecs.entry_ref(entity)?;
         let transform = entry.get_component::<Transform>()?;
-        let rigid_body_handle = self
-            .ecs
-            .entry_ref(entity)?
-            .get_component::<RigidBody>()?
-            .handle;
         let half_extents = bounding_box.half_extents().component_mul(&transform.scale);
         let collider = ColliderBuilder::cuboid(half_extents.x, half_extents.y, half_extents.z)
             .collision_groups(collision_groups)
             .build();
-        self.physics.colliders.insert_with_parent(
-            collider,
-            rigid_body_handle,
-            &mut self.physics.bodies,
-        );
+        self.insert_collider(entity, collider)?;
         Ok(())
     }
 
@@ -395,13 +374,9 @@ impl World {
             let mesh = entry.get_component::<MeshRender>()?;
             self.geometry.meshes[&mesh.name].bounding_box()
         };
+
         let entry = self.ecs.entry_ref(entity)?;
         let transform = entry.get_component::<Transform>()?;
-        let rigid_body_handle = self
-            .ecs
-            .entry_ref(entity)?
-            .get_component::<RigidBody>()?
-            .handle;
         let half_extents = bounding_box.half_extents().component_mul(&transform.scale);
         let collider = ColliderBuilder::capsule_y(
             half_extents.y,
@@ -409,12 +384,28 @@ impl World {
         )
         .collision_groups(collision_groups)
         .build();
-        self.physics.colliders.insert_with_parent(
-            collider,
-            rigid_body_handle,
-            &mut self.physics.bodies,
-        );
+
+        self.insert_collider(entity, collider)?;
+
         Ok(())
+    }
+
+    fn insert_collider(&mut self, entity: Entity, collider: Collider) -> Result<(), WorldError> {
+        Ok(
+            match self.ecs.entry_mut(entity)?.get_component_mut::<RigidBody>() {
+                Ok(rigid_body) => {
+                    let handle = self.physics.colliders.insert_with_parent(
+                        collider,
+                        rigid_body.handle,
+                        &mut self.physics.bodies,
+                    );
+                    rigid_body.colliders.push(handle);
+                }
+                Err(_) => {
+                    self.physics.colliders.insert(collider);
+                }
+            },
+        )
     }
 
     pub fn add_trimesh_collider(
@@ -427,12 +418,7 @@ impl World {
         let transform = self.entity_global_transform(entity)?;
         let mesh = &self.geometry.meshes[&mesh.name];
 
-        // TODO: Add collider handles to component
-        let rigid_body_handle = self
-            .ecs
-            .entry_ref(entity)?
-            .get_component::<RigidBody>()?
-            .handle;
+        let mut colliders = Vec::new();
 
         for primitive in mesh.primitives.iter() {
             let vertices = self.geometry.vertices
@@ -456,12 +442,13 @@ impl World {
             let collider = ColliderBuilder::trimesh(vertices, indices)
                 .collision_groups(collision_groups)
                 .build();
-            self.physics.colliders.insert_with_parent(
-                collider,
-                rigid_body_handle,
-                &mut self.physics.bodies,
-            );
+
+            colliders.push(collider);
         }
+
+        colliders
+            .into_iter()
+            .try_for_each(|collider| self.insert_collider(entity, collider))?;
         Ok(())
     }
 
