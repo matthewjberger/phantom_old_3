@@ -1,8 +1,9 @@
 use crate::{
     AlphaMode, Animation, BoundingBox, Camera, Channel, Ecs, Entity, EntitySceneGraph, Filter,
-    Format, Geometry, Interpolation, Joint, Light, LightKind, Material, Mesh, MeshRender,
-    MorphTarget, Name, OrthographicCamera, PerspectiveCamera, Primitive, Projection, Sampler,
-    Scene, Skin, Texture, TextureError, Transform, TransformationSet, Vertex, World, WrappingMode,
+    Geometry, Interpolation, Joint, Light, LightKind, Material, Mesh, MeshRender, MorphTarget,
+    Name, OrthographicCamera, PerspectiveCamera, Primitive, Projection, Sampler, Scene, Skin,
+    Texture, TextureError, TextureFormat, Transform, TransformationSet, Vertex, World,
+    WrappingMode,
 };
 use gltf::{self, animation::util::ReadOutputs};
 use legion::{
@@ -227,18 +228,18 @@ fn load_textures(gltf: &gltf::Document, images: &[gltf::image::Data]) -> Result<
     Ok(textures)
 }
 
-fn map_gltf_format(format: gltf::image::Format) -> Format {
+fn map_gltf_format(format: gltf::image::Format) -> TextureFormat {
     match format {
-        gltf::image::Format::R8 => Format::R8,
-        gltf::image::Format::R8G8 => Format::R8G8,
-        gltf::image::Format::R8G8B8 => Format::R8G8B8,
-        gltf::image::Format::R8G8B8A8 => Format::R8G8B8A8,
-        gltf::image::Format::B8G8R8 => Format::B8G8R8,
-        gltf::image::Format::B8G8R8A8 => Format::B8G8R8A8,
-        gltf::image::Format::R16 => Format::R16,
-        gltf::image::Format::R16G16 => Format::R16G16,
-        gltf::image::Format::R16G16B16 => Format::R16G16B16,
-        gltf::image::Format::R16G16B16A16 => Format::R16G16B16A16,
+        gltf::image::Format::R8 => TextureFormat::R8,
+        gltf::image::Format::R8G8 => TextureFormat::R8G8,
+        gltf::image::Format::R8G8B8 => TextureFormat::R8G8B8,
+        gltf::image::Format::R8G8B8A8 => TextureFormat::R8G8B8A8,
+        gltf::image::Format::B8G8R8 => TextureFormat::B8G8R8,
+        gltf::image::Format::B8G8R8A8 => TextureFormat::B8G8R8A8,
+        gltf::image::Format::R16 => TextureFormat::R16,
+        gltf::image::Format::R16G16 => TextureFormat::R16G16,
+        gltf::image::Format::R16G16B16 => TextureFormat::R16G16B16,
+        gltf::image::Format::R16G16B16A16 => TextureFormat::R16G16B16A16,
     }
 }
 

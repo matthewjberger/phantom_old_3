@@ -37,7 +37,7 @@ type Result<T, E = TextureError> = std::result::Result<T, E>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Texture {
     pub pixels: Vec<u8>,
-    pub format: Format,
+    pub format: TextureFormat,
     pub width: u32,
     pub height: u32,
     pub sampler: Sampler,
@@ -46,7 +46,7 @@ pub struct Texture {
 impl Texture {
     pub fn new(
         pixels: Vec<u8>,
-        format: Format,
+        format: TextureFormat,
         width: u32,
         height: u32,
         sampler: Sampler,
@@ -74,13 +74,13 @@ impl Texture {
         Self::new(pixels, format, width, height, Sampler::default())
     }
 
-    pub fn map_format(image: &DynamicImage) -> Result<Format> {
+    pub fn map_format(image: &DynamicImage) -> Result<TextureFormat> {
         Ok(match image {
-            DynamicImage::ImageRgb8(_) => Format::R8G8B8,
-            DynamicImage::ImageRgba8(_) => Format::R8G8B8A8,
-            DynamicImage::ImageRgb16(_) => Format::R16G16B16,
-            DynamicImage::ImageRgba16(_) => Format::R16G16B16A16,
-            DynamicImage::ImageRgba32F(_) => Format::R32G32B32A32F,
+            DynamicImage::ImageRgb8(_) => TextureFormat::R8G8B8,
+            DynamicImage::ImageRgba8(_) => TextureFormat::R8G8B8A8,
+            DynamicImage::ImageRgb16(_) => TextureFormat::R16G16B16,
+            DynamicImage::ImageRgba16(_) => TextureFormat::R16G16B16A16,
+            DynamicImage::ImageRgba32F(_) => TextureFormat::R32G32B32A32F,
             _ => return Err(TextureError::MapFormat),
         })
     }
@@ -89,8 +89,8 @@ impl Texture {
         // 24-bit formats are unsupported, so they
         // need to have an alpha channel added to make them 32-bit
         let format = match self.format {
-            Format::R8G8B8 => Format::R8G8B8A8,
-            Format::B8G8R8 => Format::B8G8R8A8,
+            TextureFormat::R8G8B8 => TextureFormat::R8G8B8A8,
+            TextureFormat::B8G8R8 => TextureFormat::B8G8R8A8,
             _ => return Ok(()),
         };
         self.format = format;
@@ -129,7 +129,7 @@ impl Texture {
                 .to_vec();
         Ok(Self {
             pixels,
-            format: Format::R32G32B32A32F,
+            format: TextureFormat::R32G32B32A32F,
             width,
             height,
             sampler: Sampler::default(),
@@ -148,26 +148,26 @@ impl Texture {
 
     pub fn bytes_per_pixel(&self) -> u32 {
         match self.format {
-            Format::R8 => 1,
-            Format::R8G8 => 2,
-            Format::R8G8B8 | Format::B8G8R8 => 3,
-            Format::R8G8B8A8 | Format::B8G8R8A8 => 4,
+            TextureFormat::R8 => 1,
+            TextureFormat::R8G8 => 2,
+            TextureFormat::R8G8B8 | TextureFormat::B8G8R8 => 3,
+            TextureFormat::R8G8B8A8 | TextureFormat::B8G8R8A8 => 4,
 
-            Format::R16 | Format::R16F => 2,
-            Format::R16G16 | Format::R16G16F => 4,
-            Format::R16G16B16 | Format::R16G16B16F => 6,
-            Format::R16G16B16A16 | Format::R16G16B16A16F => 8,
+            TextureFormat::R16 | TextureFormat::R16F => 2,
+            TextureFormat::R16G16 | TextureFormat::R16G16F => 4,
+            TextureFormat::R16G16B16 | TextureFormat::R16G16B16F => 6,
+            TextureFormat::R16G16B16A16 | TextureFormat::R16G16B16A16F => 8,
 
-            Format::R32 | Format::R32F => 4,
-            Format::R32G32 | Format::R32G32F => 8,
-            Format::R32G32B32 | Format::R32G32B32F => 12,
-            Format::R32G32B32A32 | Format::R32G32B32A32F => 16,
+            TextureFormat::R32 | TextureFormat::R32F => 4,
+            TextureFormat::R32G32 | TextureFormat::R32G32F => 8,
+            TextureFormat::R32G32B32 | TextureFormat::R32G32B32F => 12,
+            TextureFormat::R32G32B32A32 | TextureFormat::R32G32B32A32F => 16,
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub enum Format {
+pub enum TextureFormat {
     R8,
     R8G8,
     R8G8B8,
