@@ -1,10 +1,13 @@
-use legion::EntityStore;
-use nalgebra_glm as glm;
 use phantom::{
-    app::{MouseLook, Resources, State, StateResult, Transition},
-    world::{Camera, Entity, PerspectiveCamera, Projection, Transform},
+    app::{
+        winit::event::{ElementState, KeyboardInput, VirtualKeyCode},
+        MouseLook, Resources, State, StateResult, Transition,
+    },
+    world::{
+        legion::EntityStore, nalgebra_glm as glm, Camera, Entity, PerspectiveCamera, Projection,
+        Transform,
+    },
 };
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 #[derive(Default)]
 pub struct Game {

@@ -141,6 +141,15 @@ impl Renderer for WgpuRenderer {
 
         Ok(())
     }
+
+    fn viewport(&self) -> Viewport {
+        Viewport {
+            x: 0.0,
+            y: 0.0,
+            width: self.config.width as _,
+            height: self.config.height as _,
+        }
+    }
 }
 
 impl WgpuRenderer {

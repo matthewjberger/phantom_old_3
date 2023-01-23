@@ -15,5 +15,8 @@ pub mod render {
 }
 
 pub mod world {
+    pub use legion;
+    pub use petgraph;
     pub use phantom_world::*;
+    pub use rapier3d;
 }

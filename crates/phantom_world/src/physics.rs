@@ -1,7 +1,7 @@
 use rapier3d::{
     self,
     dynamics::{CCDSolver, IntegrationParameters, RigidBodySet},
-    geometry::{BroadPhase, ColliderSet, NarrowPhase},
+    geometry::{BroadPhase, ColliderSet as RapierColliderSet, NarrowPhase},
     na::Vector3,
     pipeline::{PhysicsPipeline, QueryPipeline},
     prelude::{ImpulseJointSet, IslandManager, MultibodyJointSet, RigidBodyHandle},
@@ -26,6 +26,11 @@ impl RigidBody {
     }
 }
 
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct ColliderSet {
+    pub handles: Vec<ColliderHandle>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct WorldPhysics {
     pub gravity: Vector3<f32>,
@@ -34,7 +39,7 @@ pub struct WorldPhysics {
     pub narrow_phase: NarrowPhase,
     pub islands: IslandManager,
     pub bodies: RigidBodySet,
-    pub colliders: ColliderSet,
+    pub colliders: RapierColliderSet,
     pub impulse_joints: ImpulseJointSet,
     #[serde(skip, default = "MultibodyJointSet::new")]
     pub multibody_joints: MultibodyJointSet,
@@ -59,7 +64,7 @@ impl WorldPhysics {
             narrow_phase: NarrowPhase::new(),
             islands: IslandManager::new(),
             bodies: RigidBodySet::new(),
-            colliders: ColliderSet::new(),
+            colliders: RapierColliderSet::new(),
             impulse_joints: ImpulseJointSet::new(),
             multibody_joints: MultibodyJointSet::new(),
             query_pipeline: QueryPipeline::default(),
@@ -102,7 +107,5 @@ impl WorldPhysics {
             // Ignore contact events
             &(),
         );
-
-        self.query_pipeline.update(&self.bodies, &self.colliders);
     }
 }

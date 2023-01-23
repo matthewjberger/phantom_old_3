@@ -5,9 +5,5 @@ edition = "2021"
 
 [dependencies]
 env_logger = "0.10.0"
-legion = "0.4.0"
 log = "0.4.17"
-nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
 phantom = { path = "../.." }
-rapier3d = { version = "0.17.0", features = ["serde-serialize"] }
-winit = "0.27.5"

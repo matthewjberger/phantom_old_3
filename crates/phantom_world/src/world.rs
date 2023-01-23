@@ -1,8 +1,8 @@
 use crate::{
     deserialize_ecs, scenegraph, serialize_ecs, world_as_bytes, world_from_bytes, Animation,
-    Camera, Ecs, Entity, EntitySceneGraph, EntitySceneGraphNode, Material, Name, PerspectiveCamera,
-    Projection, RegistryError, RigidBody, SceneGraphError, Texture, TextureError, Transform,
-    WorldPhysics,
+    Camera, ColliderSet, Ecs, Entity, EntitySceneGraph, EntitySceneGraphNode, Material, Name,
+    PerspectiveCamera, Projection, RegistryError, RigidBody, SceneGraphError, Texture,
+    TextureError, Transform, WorldPhysics,
 };
 use bmfont::{self, BMFont, OrdinateOrientation};
 use legion::{
@@ -15,7 +15,7 @@ use petgraph::prelude::*;
 use rapier3d::{
     dynamics::RigidBodyBuilder,
     geometry::{ColliderBuilder, InteractionGroups, Ray},
-    prelude::{Collider, QueryFilter, RigidBodyType},
+    prelude::{Collider, ColliderHandle, QueryFilter, RigidBodyType},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -66,9 +66,6 @@ pub enum WorldError {
 
     #[error("Failed to load world from file!")]
     LoadWorldFromFile(#[source] std::io::Error),
-
-    #[error("Failed to get a collider's parent!")]
-    GetColliderParent,
 
     #[error("Failed to save world!")]
     SaveWorldToFile(#[source] std::io::Error),
@@ -360,7 +357,21 @@ impl World {
         let collider = ColliderBuilder::cuboid(half_extents.x, half_extents.y, half_extents.z)
             .collision_groups(collision_groups)
             .build();
-        self.insert_collider(entity, collider)?;
+        let collider_handle = self.insert_collider(entity, collider)?;
+
+        let mut entry = self.ecs.entry(entity).ok_or(WorldError::FindEntity)?;
+        match entry.get_component_mut::<ColliderSet>() {
+            Ok(collider_set) => {
+                collider_set.handles.push(collider_handle);
+            }
+            Err(_) => {
+                let collider_set = ColliderSet {
+                    handles: vec![collider_handle],
+                };
+                entry.add_component(collider_set);
+            }
+        }
+
         Ok(())
     }
 
@@ -375,22 +386,41 @@ impl World {
             self.geometry.meshes[&mesh.name].bounding_box()
         };
 
-        let entry = self.ecs.entry_ref(entity)?;
-        let transform = entry.get_component::<Transform>()?;
-        let half_extents = bounding_box.half_extents().component_mul(&transform.scale);
-        let collider = ColliderBuilder::capsule_y(
-            half_extents.y,
-            std::cmp::max(half_extents.x as u32, half_extents.z as u32) as f32,
-        )
-        .collision_groups(collision_groups)
-        .build();
+        let collider_handle = {
+            let entry = self.ecs.entry_ref(entity)?;
+            let transform = entry.get_component::<Transform>()?;
+            let half_extents = bounding_box.half_extents().component_mul(&transform.scale);
+            let collider = ColliderBuilder::capsule_y(
+                half_extents.y,
+                std::cmp::max(half_extents.x as u32, half_extents.z as u32) as f32,
+            )
+            .collision_groups(collision_groups)
+            .build();
 
-        self.insert_collider(entity, collider)?;
+            self.insert_collider(entity, collider.clone())?
+        };
+
+        let mut entry = self.ecs.entry(entity).ok_or(WorldError::FindEntity)?;
+        match entry.get_component_mut::<ColliderSet>() {
+            Ok(collider_set) => {
+                collider_set.handles.push(collider_handle);
+            }
+            Err(_) => {
+                let collider_set = ColliderSet {
+                    handles: vec![collider_handle],
+                };
+                entry.add_component(collider_set);
+            }
+        }
 
         Ok(())
     }
 
-    fn insert_collider(&mut self, entity: Entity, collider: Collider) -> Result<(), WorldError> {
+    fn insert_collider(
+        &mut self,
+        entity: Entity,
+        collider: Collider,
+    ) -> Result<ColliderHandle, WorldError> {
         Ok(
             match self.ecs.entry_mut(entity)?.get_component_mut::<RigidBody>() {
                 Ok(rigid_body) => {
@@ -400,10 +430,9 @@ impl World {
                         &mut self.physics.bodies,
                     );
                     rigid_body.colliders.push(handle);
+                    handle
                 }
-                Err(_) => {
-                    self.physics.colliders.insert(collider);
-                }
+                Err(_) => self.physics.colliders.insert(collider),
             },
         )
     }
@@ -446,9 +475,26 @@ impl World {
             colliders.push(collider);
         }
 
-        colliders
+        let collider_handles = colliders
             .into_iter()
-            .try_for_each(|collider| self.insert_collider(entity, collider))?;
+            .map(|collider| self.insert_collider(entity, collider))
+            .collect::<Result<Vec<_>>>()?;
+
+        for collider_handle in collider_handles {
+            let mut entry = self.ecs.entry(entity).ok_or(WorldError::FindEntity)?;
+            match entry.get_component_mut::<ColliderSet>() {
+                Ok(collider_set) => {
+                    collider_set.handles.push(collider_handle);
+                }
+                Err(_) => {
+                    let collider_set = ColliderSet {
+                        handles: vec![collider_handle],
+                    };
+                    entry.add_component(collider_set);
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -494,8 +540,34 @@ impl World {
             .collect::<Vec<_>>()
     }
 
-    pub fn mouse_ray(&mut self, configuration: &MouseRayConfiguration) -> Result<Ray> {
-        let MouseRayConfiguration {
+    pub fn pick_object(
+        &mut self,
+        raycast_configuration: &RaycastConfiguration,
+        interact_distance: f32,
+        groups: InteractionGroups,
+    ) -> Result<Option<Entity>> {
+        let raycast = self.raycast(raycast_configuration)?;
+        log::info!("Raycast: {:#?}", raycast);
+
+        let hit = self.physics.query_pipeline.cast_ray(
+            &self.physics.bodies,
+            &self.physics.colliders,
+            &raycast,
+            interact_distance,
+            true,
+            QueryFilter::from(groups),
+        );
+
+        log::info!("Attempted hit: {:#?}", hit);
+
+        Ok(match hit {
+            Some((handle, _)) => self.resolve_hit(handle),
+            None => None,
+        })
+    }
+
+    fn raycast(&mut self, configuration: &RaycastConfiguration) -> Result<Ray> {
+        let RaycastConfiguration {
             viewport,
             projection_matrix,
             view_matrix,
@@ -520,37 +592,28 @@ impl World {
         Ok(ray)
     }
 
-    pub fn pick_object(
-        &mut self,
-        mouse_ray_configuration: &MouseRayConfiguration,
-        interact_distance: f32,
-        groups: InteractionGroups,
-    ) -> Result<Option<Entity>> {
-        let ray = self.mouse_ray(mouse_ray_configuration)?;
-
-        let hit = self.physics.query_pipeline.cast_ray(
-            &self.physics.bodies,
-            &self.physics.colliders,
-            &ray,
-            interact_distance,
-            true,
-            QueryFilter::from(groups),
-        );
-
-        let mut picked_entity = None;
-        if let Some((handle, _)) = hit {
-            let collider = &self.physics.colliders[handle];
-            let rigid_body_handle = collider.parent().ok_or(WorldError::GetColliderParent)?;
-            let mut query = <(Entity, &RigidBody)>::query();
-            for (entity, rigid_body) in query.iter(&self.ecs) {
-                if rigid_body.handle == rigid_body_handle {
-                    picked_entity = Some(*entity);
-                    break;
+    fn resolve_hit(&mut self, handle: ColliderHandle) -> Option<Entity> {
+        let hit_collider = &self.physics.colliders[handle];
+        match hit_collider.parent() {
+            Some(rigid_body_handle) => {
+                let mut query = <(Entity, &RigidBody)>::query();
+                for (entity, rigid_body) in query.iter(&self.ecs) {
+                    if rigid_body.handle == rigid_body_handle {
+                        return Some(*entity);
+                    }
                 }
+                None
+            }
+            None => {
+                let mut query = <(Entity, &ColliderSet)>::query();
+                for (entity, collider_set) in query.iter(&self.ecs) {
+                    if collider_set.handles.contains(&handle) {
+                        return Some(*entity);
+                    }
+                }
+                None
             }
         }
-
-        Ok(picked_entity)
     }
 
     pub fn tick(&mut self, delta_time: f32) -> Result<()> {
@@ -702,7 +765,7 @@ impl Viewport {
     }
 }
 
-pub struct MouseRayConfiguration {
+pub struct RaycastConfiguration {
     pub viewport: Viewport,
     pub projection_matrix: glm::Mat4,
     pub view_matrix: glm::Mat4,

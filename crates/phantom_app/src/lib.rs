@@ -4,3 +4,4 @@ mod resources;
 mod state;
 
 pub use self::{app::*, camera::*, resources::*, state::*};
+pub use winit;

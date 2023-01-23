@@ -2,18 +2,31 @@ use crate::commands::{
     CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
 };
 use anyhow::anyhow;
-use egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui};
-use egui_gizmo::{GizmoMode, GizmoOrientation};
-use legion::EntityStore;
-use nalgebra_glm as glm;
-use petgraph::{graph::NodeIndex, Direction::Outgoing};
 use phantom::{
-    app::{MouseOrbit, Resources, State, StateResult, Transition},
-    gui::GizmoWidget,
-    world::{Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform},
+    app::{
+        winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode},
+        MouseOrbit, Resources, State, StateResult, Transition,
+    },
+    gui::{
+        egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui},
+        egui_gizmo::{GizmoMode, GizmoOrientation},
+        GizmoWidget,
+    },
+    world::{
+        legion::EntityStore,
+        nalgebra_glm as glm,
+        petgraph::{graph::NodeIndex, Direction::Outgoing},
+        rapier3d::geometry::{Group, InteractionGroups},
+        ColliderHandle, Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform,
+    },
 };
 use rfd::FileDialog;
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
+
+#[allow(dead_code)]
+pub struct EditorMetadata {
+    collider: ColliderHandle,
+    selected: bool,
+}
 
 pub struct Editor {
     camera: MouseOrbit,
@@ -33,6 +46,9 @@ impl Default for Editor {
 }
 
 impl Editor {
+    pub const EDITOR_GROUP: InteractionGroups =
+        InteractionGroups::new(Group::GROUP_1, Group::GROUP_1);
+
     fn top_panel(&mut self, resources: &mut Resources) {
         let ctx = &resources.gui.context.clone();
         egui::TopBottomPanel::top("top_panel")
@@ -294,26 +310,25 @@ impl State for Editor {
         Ok(Transition::None)
     }
 
-    // fn on_mouse(
-    //     &mut self,
-    //     resources: &mut Resources,
-    //     button: &MouseButton,
-    //     button_state: &ElementState,
-    // ) -> StateResult<Transition> {
-    //     log::trace!("Mouse event: {:#?} {:#?}", button, button_state);
-    //     if (MouseButton::Left, ElementState::Pressed) == (*button, *button_state) {
-    //         let interact_distance = f32::MAX;
-    //         let picked_entity = resources.world.pick_object(
-    //             &resources.mouse_ray_configuration()?,
-    //             interact_distance,
-    //             EDITOR_COLLISION_GROUP,
-    //         )?;
-    //         if let Some(entity) = picked_entity {
-    //             self.select_entity(entity, resources)?;
-    //         }
-    //     }
-    //     Ok(Transition::None)
-    // }
+    fn on_mouse(
+        &mut self,
+        resources: &mut Resources,
+        button: &MouseButton,
+        button_state: &ElementState,
+    ) -> StateResult<Transition> {
+        if (MouseButton::Left, ElementState::Pressed) == (*button, *button_state) {
+            let interact_distance = f32::MAX;
+            let picked_entity = resources.world.pick_object(
+                &resources.raycast_configuration()?,
+                interact_distance,
+                Self::EDITOR_GROUP,
+            )?;
+            if let Some(entity) = picked_entity {
+                log::info!("Picked entity: {:?}", entity);
+            }
+        }
+        Ok(Transition::None)
+    }
 
     fn on_key(
         &mut self,

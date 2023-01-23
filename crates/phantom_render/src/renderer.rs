@@ -22,6 +22,7 @@ pub trait Renderer {
         config: &Config,
         gui_frame: &mut GuiFrame,
     ) -> Result<(), Box<dyn Error>>;
+    fn viewport(&self) -> Viewport;
 }
 
 pub fn create_renderer<W: HasRawWindowHandle + HasRawDisplayHandle>(

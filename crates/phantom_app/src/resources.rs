@@ -1,8 +1,6 @@
 mod input;
 mod system;
 
-use std::path::Path;
-
 pub use self::{input::*, system::*};
 
 use gilrs::Gilrs;
@@ -11,7 +9,8 @@ use nalgebra_glm as glm;
 use phantom_config::Config;
 use phantom_gui::Gui;
 use phantom_render::Renderer;
-use phantom_world::{load_gltf, GltfError, World, WorldError};
+use phantom_world::{load_gltf, GltfError, RaycastConfiguration, World, WorldError};
+use std::path::Path;
 use thiserror::Error;
 use winit::{
     dpi::PhysicalPosition,
@@ -41,6 +40,9 @@ pub enum ResourceError {
 
     #[error("Failed to sync renderer with world!")]
     SyncRenderer(#[source] Box<dyn std::error::Error>),
+
+    #[error("Failed to create raycast configuration!")]
+    Raycast(#[from] WorldError),
 }
 
 type Result<T, E = ResourceError> = std::result::Result<T, E>;
@@ -102,5 +104,23 @@ impl<'a> Resources<'a> {
         self.renderer
             .load_world(self.world)
             .map_err(ResourceError::SyncRenderer)
+    }
+
+    pub fn raycast_configuration(&self) -> Result<RaycastConfiguration> {
+        let viewport = self.renderer.viewport();
+
+        let (projection, view) = self
+            .world
+            .active_camera_matrices(viewport.aspect_ratio())
+            .map_err(ResourceError::Raycast)?;
+
+        let mouse_ray_configuration = RaycastConfiguration {
+            viewport,
+            projection_matrix: projection,
+            view_matrix: view,
+            mouse_position: self.input.mouse.position,
+        };
+
+        Ok(mouse_ray_configuration)
     }
 }

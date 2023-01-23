@@ -1,5 +1,9 @@
+use crate::editor::Editor;
 use anyhow::Result;
-use phantom::app::Resources;
+use phantom::{
+    app::Resources,
+    world::{legion::IntoQuery, Entity, MeshRender},
+};
 use std::path::PathBuf;
 
 pub trait Command {
@@ -77,7 +81,22 @@ impl Command for LoadGltfAssetCommand {
 
     fn execute(&mut self, resources: &mut Resources) -> Result<()> {
         log::info!("Loading GLTF Asset: {:?}", &self.0);
-        resources.load_gltf(&self.0).unwrap();
+        resources.load_gltf(&self.0).expect("Failed to load gltf!");
+
+        let mut query = <(Entity, &MeshRender)>::query();
+        let entities = query
+            .iter(&mut resources.world.ecs)
+            .map(|(entity, _mesh_render)| *entity)
+            .collect::<Vec<_>>();
+
+        for entity in entities.into_iter() {
+            resources
+                .world
+                .add_box_collider(entity, Editor::EDITOR_GROUP)
+                .expect("Failed to add collider");
+            log::info!("Added capsule collider to entity: {:?}", entity);
+        }
+
         Ok(())
     }
 
