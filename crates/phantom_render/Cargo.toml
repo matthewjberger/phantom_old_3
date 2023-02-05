@@ -17,4 +17,4 @@ phantom_world = { path = "../phantom_world" }
 pollster = "0.2.5"
 raw-window-handle = "0.5.0"
 thiserror = "1.0.38"
-wgpu = "0.14.2"
+wgpu = "0.15.0"

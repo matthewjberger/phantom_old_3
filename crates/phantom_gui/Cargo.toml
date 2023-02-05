@@ -9,4 +9,4 @@ egui-gizmo = "0.9.0"
 egui-wgpu = { version = "0.20.0", features = ["winit"] }
 egui-winit = "0.20.1"
 nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
-winit = "0.27.5"
+winit = "0.28.1"
