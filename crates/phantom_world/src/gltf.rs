@@ -234,12 +234,12 @@ fn map_gltf_format(format: gltf::image::Format) -> TextureFormat {
         gltf::image::Format::R8G8 => TextureFormat::R8G8,
         gltf::image::Format::R8G8B8 => TextureFormat::R8G8B8,
         gltf::image::Format::R8G8B8A8 => TextureFormat::R8G8B8A8,
-        gltf::image::Format::B8G8R8 => TextureFormat::B8G8R8,
-        gltf::image::Format::B8G8R8A8 => TextureFormat::B8G8R8A8,
         gltf::image::Format::R16 => TextureFormat::R16,
         gltf::image::Format::R16G16 => TextureFormat::R16G16,
         gltf::image::Format::R16G16B16 => TextureFormat::R16G16B16,
         gltf::image::Format::R16G16B16A16 => TextureFormat::R16G16B16A16,
+        gltf::image::Format::R32G32B32FLOAT => TextureFormat::R32G32B32,
+        gltf::image::Format::R32G32B32A32FLOAT => TextureFormat::R32G32B32A32,
     }
 }
 
