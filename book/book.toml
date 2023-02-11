@@ -3,7 +3,7 @@ authors = ["Matthew J. Berger"]
 language = "en"
 multilingual = false
 src = "src"
-title = "Let's Build a Game Engine!"
+title = "Phantom Game Engine"
 
 [rust]
 edition = "2021"
