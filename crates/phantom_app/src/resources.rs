@@ -1,17 +1,16 @@
 mod input;
 mod system;
 
-use std::path::Path;
-
 pub use self::{input::*, system::*};
 
 use gilrs::Gilrs;
-use legion::world::EntityAccessError;
-use nalgebra_glm as glm;
 use phantom_config::Config;
 use phantom_gui::Gui;
 use phantom_render::Renderer;
-use phantom_world::{load_gltf, GltfError, World, WorldError};
+use phantom_world::{
+    legion::world::EntityAccessError, load_gltf, nalgebra_glm as glm, GltfError, World, WorldError,
+};
+use std::path::Path;
 use thiserror::Error;
 use winit::{
     dpi::PhysicalPosition,

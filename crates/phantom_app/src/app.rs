@@ -1,10 +1,8 @@
 use crate::{Input, Resources, State, StateMachine, System};
-use egui::FullOutput;
-use egui_wgpu::renderer::ScreenDescriptor;
 use gilrs::{self, Gilrs};
 use image::{self, io::Reader};
 use phantom_config::Config;
-use phantom_gui::{Gui, GuiFrame};
+use phantom_gui::{egui::FullOutput, egui_wgpu::renderer::ScreenDescriptor, Gui, GuiFrame};
 use phantom_render::{create_renderer, Backend};
 use phantom_world::{Viewport, World, WorldError};
 use std::io;

@@ -1,4 +1,4 @@
-use nalgebra_glm as glm;
+use phantom_world::nalgebra_glm as glm;
 use std::collections::HashMap;
 use winit::{
     dpi::PhysicalPosition,

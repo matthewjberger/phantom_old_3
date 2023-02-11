@@ -1,10 +1,11 @@
 use crate::{ResourceError, Resources};
-use legion::{
-    world::{ComponentError, EntityAccessError},
-    EntityStore,
+use phantom_world::{
+    legion::{
+        world::{ComponentError, EntityAccessError},
+        EntityStore,
+    },
+    nalgebra_glm as glm, Entity, Transform,
 };
-use nalgebra_glm as glm;
-use phantom_world::{Entity, Transform};
 use thiserror::Error;
 use winit::{event::VirtualKeyCode, window::CursorGrabMode};
 

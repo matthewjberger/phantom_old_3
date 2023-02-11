@@ -7,7 +7,8 @@ editor:
   cargo run -r --bin editor
 
 check:
-  cargo check --workspace
+  cargo check --workspace --tests
+  cargo fmt --check
 
 format:
   cargo fmt --all
@@ -18,7 +19,7 @@ lint:
 test:
   cargo test --workspace
 
-versions:
+@versions:
   rustc --version
   cargo fmt -- --version
   cargo clippy -- --version

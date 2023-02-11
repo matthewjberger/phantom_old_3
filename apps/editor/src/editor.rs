@@ -2,15 +2,19 @@ use crate::commands::{
     CloseMapCommand, CommandList, ExitCommand, LoadGltfAssetCommand, OpenMapCommand, SaveMapCommand,
 };
 use anyhow::anyhow;
-use egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui};
-use egui_gizmo::{GizmoMode, GizmoOrientation};
-use legion::EntityStore;
-use nalgebra_glm as glm;
-use petgraph::{graph::NodeIndex, Direction::Outgoing};
 use phantom::{
     app::{MouseOrbit, Resources, State, StateResult, Transition},
-    gui::GizmoWidget,
-    world::{Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform},
+    gui::{
+        egui::{self, global_dark_light_mode_switch, menu, LayerId, SelectableLabel, Ui},
+        egui_gizmo::{GizmoMode, GizmoOrientation},
+        GizmoWidget,
+    },
+    world::{
+        legion::EntityStore,
+        nalgebra_glm as glm,
+        petgraph::{graph::NodeIndex, Direction::Outgoing},
+        Ecs, Entity, EntitySceneGraph, Name, RigidBody, Transform,
+    },
 };
 use rfd::FileDialog;
 use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
