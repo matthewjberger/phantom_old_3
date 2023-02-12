@@ -1,5 +1,8 @@
 use editor::Editor;
-use phantom::app::{run, AppConfig, ApplicationError};
+use phantom::{
+    app::{run, AppConfig, ApplicationError},
+    window::WindowConfig,
+};
 
 mod commands;
 mod editor;
@@ -9,9 +12,11 @@ fn main() -> Result<(), ApplicationError> {
     run(
         Editor::default(),
         AppConfig {
-            icon: Some("assets/icons/phantom.png".to_string()),
-            title: "Phantom Editor".to_string(),
-            ..Default::default()
+            window: WindowConfig {
+                icon: Some("assets/icons/phantom.png".to_string()),
+                title: "Phantom Editor".to_string(),
+                ..Default::default()
+            },
         },
     )
 }

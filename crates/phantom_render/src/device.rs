@@ -1,3 +1,3 @@
-mod dummy;
+mod vulkan;
 
-pub(crate) use self::dummy::DummyDevice;
+pub(crate) use self::vulkan::VulkanDevice;

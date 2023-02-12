@@ -2,7 +2,7 @@ use crate::{Input, Resources, State, StateMachine, System};
 use gilrs::{self, Gilrs};
 use phantom_config::Config;
 use phantom_gui::{egui::FullOutput, Gui, GuiFrame};
-use phantom_render::{create_gpu_device, Backend};
+use phantom_render::create_gpu_device;
 use phantom_window::{
     image,
     winit::{
@@ -65,34 +65,9 @@ pub enum ApplicationError {
 
 type Result<T, E = ApplicationError> = std::result::Result<T, E>;
 
+#[derive(Default)]
 pub struct AppConfig {
-    pub width: u32,
-    pub height: u32,
-    pub is_fullscreen: bool,
-    pub title: String,
-    pub icon: Option<String>,
-    pub render_backend: Backend,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            width: 1024,
-            height: 768,
-            is_fullscreen: false,
-            title: "Phantom App".to_string(),
-            icon: None,
-
-            #[cfg(target_os = "windows")]
-            render_backend: Backend::Vulkan,
-
-            #[cfg(target_os = "macos")]
-            render_backend: Backend::Metal,
-
-            #[cfg(target_os = "linux")]
-            render_backend: Backend::Vulkan,
-        }
-    }
+    pub window: WindowConfig,
 }
 
 pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()> {
@@ -103,7 +78,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
         event_loop,
     } = Window::new(WindowConfig::default()).unwrap();
 
-    if config.is_fullscreen {
+    if config.window.is_fullscreen {
         window.set_fullscreen(Some(Fullscreen::Borderless(window.primary_monitor())));
     }
 
@@ -118,11 +93,10 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     let mut system = System::new(window_dimensions);
 
     let mut renderer = create_gpu_device(
-        &config.render_backend,
         &window,
         &Viewport {
-            width: config.width as _,
-            height: config.height as _,
+            width: config.window.width as _,
+            height: config.window.height as _,
             ..Default::default()
         },
     )

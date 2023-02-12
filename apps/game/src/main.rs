@@ -1,5 +1,8 @@
 use game::Game;
-use phantom::app::{run, AppConfig, ApplicationError};
+use phantom::{
+    app::{run, AppConfig, ApplicationError},
+    window::WindowConfig,
+};
 
 mod game;
 
@@ -8,10 +11,11 @@ fn main() -> Result<(), ApplicationError> {
     run(
         Game::default(),
         AppConfig {
-            icon: Some("assets/icons/phantom.png".to_string()),
-            title: "Phantom Viewer".to_string(),
-            is_fullscreen: true,
-            ..Default::default()
+            window: WindowConfig {
+                icon: Some("assets/icons/phantom.png".to_string()),
+                title: "Phantom Game".to_string(),
+                ..Default::default()
+            },
         },
     )
 }

@@ -1,10 +1,13 @@
-use crate::GpuDevice;
+use crate::Renderer;
 
 #[derive(Default)]
-pub struct DummyDevice;
+pub struct VulkanDevice;
 
-impl GpuDevice for DummyDevice {
-    fn load_world(&mut self, _world: &phantom_world::World) -> Result<(), Box<dyn std::error::Error>> {
+impl Renderer for VulkanDevice {
+    fn load_world(
+        &mut self,
+        _world: &phantom_world::World,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 

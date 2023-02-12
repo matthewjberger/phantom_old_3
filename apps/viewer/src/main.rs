@@ -1,4 +1,7 @@
-use phantom::app::{run, AppConfig, ApplicationError};
+use phantom::{
+    app::{run, AppConfig, ApplicationError},
+    window::WindowConfig,
+};
 use viewer::Viewer;
 
 mod viewer;
@@ -8,9 +11,11 @@ fn main() -> Result<(), ApplicationError> {
     run(
         Viewer::default(),
         AppConfig {
-            icon: Some("assets/icons/phantom.png".to_string()),
-            title: "Phantom Viewer".to_string(),
-            ..Default::default()
+            window: WindowConfig {
+                icon: Some("assets/icons/phantom.png".to_string()),
+                title: "Phantom viewer".to_string(),
+                ..Default::default()
+            },
         },
     )
 }
