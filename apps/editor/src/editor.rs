@@ -9,6 +9,7 @@ use phantom::{
         egui_gizmo::{GizmoMode, GizmoOrientation},
         GizmoWidget,
     },
+    window::winit::event::{ElementState, KeyboardInput, VirtualKeyCode},
     world::{
         legion::EntityStore,
         nalgebra_glm as glm,
@@ -17,7 +18,6 @@ use phantom::{
     },
 };
 use rfd::FileDialog;
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 pub struct Editor {
     camera: MouseOrbit,
@@ -236,7 +236,9 @@ impl Editor {
                         if let Some(gizmo_result) =
                             self.gizmo.render(ui, transform.matrix(), view, projection)
                         {
-                            let model_matrix: glm::Mat4 = gizmo_result.transform.into();
+                            let model_matrix = glm::Mat4::from_column_slice(
+                                &gizmo_result.transform().to_cols_array(),
+                            );
                             let gizmo_transform = Transform::from(model_matrix);
                             let mut entry = resources.world.ecs.entry_mut(*entity).unwrap();
                             let mut transform = entry.get_component_mut::<Transform>().unwrap();
