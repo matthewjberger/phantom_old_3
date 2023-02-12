@@ -4,11 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = { version = "1.13.0", features = ["derive"] }
-egui = "0.20.1"
-legion = "0.4.0"
 log = "0.4.17"
-nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
 phantom_config = { path = "../phantom_config" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_world = { path = "../phantom_world" }

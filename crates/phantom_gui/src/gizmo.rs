@@ -1,6 +1,6 @@
 use egui::{self, color_picker::Alpha, pos2, Align2, Color32, FontId, Slider, Ui, Widget};
 use egui_gizmo::{self, Gizmo, GizmoMode, GizmoOrientation, GizmoResult, GizmoVisuals};
-use phantom_world::{nalgebra_glm as glm};
+use phantom_world::nalgebra_glm as glm;
 
 pub struct GizmoWidget {
     pub mode: GizmoMode,
@@ -128,11 +128,11 @@ impl GizmoWidget {
         projection: glm::Mat4,
     ) -> Option<GizmoResult> {
         // Snapping is enabled with ctrl key.
-        let snapping = ui.input().modifiers.command;
+        let snapping = ui.input(|i| i.modifiers.command);
 
         // Snap angle to use for rotation when snapping is enabled.
         // Smaller snap angle is used when shift key is pressed.
-        let snap_angle = if ui.input().modifiers.shift {
+        let snap_angle = if ui.input(|i| i.modifiers.shift) {
             self.snap_angle / 2.0
         } else {
             self.snap_angle
@@ -140,7 +140,7 @@ impl GizmoWidget {
 
         // Snap distance to use for translation when snapping is enabled.
         // Smaller snap distance is used when shift key is pressed.
-        let snap_distance = if ui.input().modifiers.shift {
+        let snap_distance = if ui.input(|i| i.modifiers.shift) {
             self.snap_distance / 2.0
         } else {
             self.snap_distance
