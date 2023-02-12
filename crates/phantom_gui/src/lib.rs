@@ -5,4 +5,3 @@ pub use self::{gizmo::*, gui::*};
 
 pub use egui;
 pub use egui_gizmo;
-pub use egui_wgpu;

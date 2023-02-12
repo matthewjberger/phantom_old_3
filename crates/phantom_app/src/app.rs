@@ -1,8 +1,8 @@
 use crate::{Input, Resources, State, StateMachine, System};
 use gilrs::{self, Gilrs};
 use phantom_config::Config;
-use phantom_gui::{egui::FullOutput, egui_wgpu::renderer::ScreenDescriptor, Gui, GuiFrame};
-use phantom_render::{create_renderer, Backend};
+use phantom_gui::{egui::FullOutput, Gui, GuiFrame};
+use phantom_render::{create_gpu_device, Backend};
 use phantom_window::{
     image,
     winit::{
@@ -117,7 +117,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
     let mut input = Input::default();
     let mut system = System::new(window_dimensions);
 
-    let mut renderer = create_renderer(
+    let mut renderer = create_gpu_device(
         &config.render_backend,
         &window,
         &Viewport {
@@ -211,11 +211,6 @@ fn run_loop(
                 ..
             } = output;
             let paint_jobs = resources.gui.context.tessellate(shapes);
-            let window_size = resources.window.inner_size();
-            let screen_descriptor = ScreenDescriptor {
-                size_in_pixels: [window_size.width, window_size.height],
-                pixels_per_point: resources.window.scale_factor() as f32,
-            };
 
             state_machine
                 .update(&mut resources)
@@ -223,7 +218,6 @@ fn run_loop(
 
             let mut gui_frame_resources = GuiFrame {
                 textures_delta: &textures_delta,
-                screen_descriptor: &screen_descriptor,
                 paint_jobs: &paint_jobs,
             };
 

@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 egui = "0.20.1"
 egui-gizmo = "0.9.0"
-egui-wgpu = { version = "0.20.0", features = ["winit"] }
 egui-winit = "0.20.1"
 phantom_world = { path = "../phantom_world" }
 phantom_window = { path = "../phantom_window" }

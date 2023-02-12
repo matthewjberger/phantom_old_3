@@ -1,4 +1,4 @@
-use crate::backend::WgpuRenderer;
+use crate::device::DummyDevice;
 use phantom_config::Config;
 use phantom_gui::GuiFrame;
 use phantom_world::{Viewport, World};
@@ -13,7 +13,7 @@ pub enum Backend {
     Vulkan,
 }
 
-pub trait Renderer {
+pub trait GpuDevice {
     fn load_world(&mut self, world: &World) -> Result<(), Box<dyn Error>>;
     fn resize(&mut self, dimensions: [u32; 2]) -> Result<(), Box<dyn Error>>;
     fn render_frame(
@@ -24,11 +24,11 @@ pub trait Renderer {
     ) -> Result<(), Box<dyn Error>>;
 }
 
-pub fn create_renderer<W: HasRawWindowHandle + HasRawDisplayHandle>(
-    backend: &Backend,
-    window_handle: &W,
-    viewport: &Viewport,
-) -> Result<Box<dyn Renderer>, Box<dyn Error>> {
-    let backend = WgpuRenderer::new(&window_handle, backend, viewport)?;
-    Ok(Box::new(backend) as Box<dyn Renderer>)
+pub fn create_gpu_device<W: HasRawWindowHandle + HasRawDisplayHandle>(
+    _backend: &Backend,
+    _window_handle: &W,
+    _viewport: &Viewport,
+) -> Result<Box<dyn GpuDevice>, Box<dyn Error>> {
+    let backend = DummyDevice::default();
+    Ok(Box::new(backend) as Box<dyn GpuDevice>)
 }
