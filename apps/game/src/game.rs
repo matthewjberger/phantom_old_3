@@ -1,8 +1,6 @@
 use phantom::{
-    app::{
-        winit::event::{ElementState, KeyboardInput, VirtualKeyCode},
-        MouseLook, Resources, State, StateResult, Transition,
-    },
+    app::{MouseLook, Resources, State, StateResult, Transition},
+    window::winit::event::{ElementState, KeyboardInput, VirtualKeyCode},
     world::{
         legion::EntityStore, nalgebra_glm as glm, Camera, Entity, PerspectiveCamera, Projection,
         Transform,

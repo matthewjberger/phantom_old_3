@@ -1,9 +1,9 @@
-use phantom_world::nalgebra_glm as glm;
-use std::{cmp, time::Instant};
-use winit::{
+use phantom_window::winit::{
     dpi::PhysicalSize,
     event::{Event, WindowEvent},
 };
+use phantom_world::nalgebra_glm as glm;
+use std::{cmp, time::Instant};
 
 pub struct System {
     pub window_dimensions: [u32; 2],

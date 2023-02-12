@@ -11,4 +11,5 @@ phantom_app = { path = "crates/phantom_app" }
 phantom_audio = { path = "crates/phantom_audio" }
 phantom_gui = { path = "crates/phantom_gui" }
 phantom_render = { path = "crates/phantom_render" }
+phantom_window = { path = "crates/phantom_window" }
 phantom_world = { path = "crates/phantom_world" }

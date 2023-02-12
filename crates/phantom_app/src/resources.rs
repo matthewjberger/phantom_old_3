@@ -7,16 +7,16 @@ use gilrs::Gilrs;
 use phantom_config::Config;
 use phantom_gui::Gui;
 use phantom_render::Renderer;
+use phantom_window::winit::{
+    dpi::PhysicalPosition,
+    error::ExternalError,
+    window::{CursorGrabMode, Fullscreen, Window},
+};
 use phantom_world::{
     legion::world::EntityAccessError, load_gltf, nalgebra_glm as glm, GltfError, World, WorldError,
 };
 use std::path::Path;
 use thiserror::Error;
-use winit::{
-    dpi::PhysicalPosition,
-    error::ExternalError,
-    window::{CursorGrabMode, Fullscreen, Window},
-};
 
 #[derive(Error, Debug)]
 pub enum ResourceError {

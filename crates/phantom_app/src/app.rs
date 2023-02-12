@@ -1,20 +1,22 @@
 use crate::{Input, Resources, State, StateMachine, System};
 use gilrs::{self, Gilrs};
-use image::{self, io::Reader};
 use phantom_config::Config;
 use phantom_gui::{egui::FullOutput, egui_wgpu::renderer::ScreenDescriptor, Gui, GuiFrame};
 use phantom_render::{create_renderer, Backend};
+use phantom_window::{
+    image,
+    winit::{
+        self,
+        error::OsError,
+        event::{Event, WindowEvent},
+        event_loop::ControlFlow,
+        window::Fullscreen,
+    },
+    Window, WindowConfig,
+};
 use phantom_world::{Viewport, World, WorldError};
 use std::io;
 use thiserror::Error;
-use winit::{
-    self,
-    dpi::PhysicalSize,
-    error::OsError,
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::{Fullscreen, Icon, WindowBuilder},
-};
 
 #[derive(Error, Debug)]
 pub enum ApplicationError {
@@ -96,26 +98,10 @@ impl Default for AppConfig {
 pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()> {
     log::info!("Phantom app started");
 
-    let event_loop = EventLoop::new();
-    let mut window_builder = WindowBuilder::new()
-        .with_title(config.title.to_string())
-        .with_inner_size(PhysicalSize::new(config.width, config.height));
-
-    if let Some(icon_path) = config.icon.as_ref() {
-        let image = Reader::open(icon_path)
-            .map_err(|error| ApplicationError::OpenIconFile(error, icon_path.to_string()))?
-            .decode()
-            .map_err(|error| ApplicationError::DecodeIconFile(error, icon_path.to_string()))?
-            .into_rgba8();
-        let (width, height) = image.dimensions();
-        let icon = Icon::from_rgba(image.into_raw(), width, height)
-            .map_err(ApplicationError::CreateIcon)?;
-        window_builder = window_builder.with_window_icon(Some(icon));
-    }
-
-    let mut window = window_builder
-        .build(&event_loop)
-        .map_err(ApplicationError::CreateWindow)?;
+    let Window {
+        mut window,
+        event_loop,
+    } = Window::new(WindowConfig::default()).unwrap();
 
     if config.is_fullscreen {
         window.set_fullscreen(Some(Fullscreen::Borderless(window.primary_monitor())));

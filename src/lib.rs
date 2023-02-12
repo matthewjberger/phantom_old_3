@@ -14,6 +14,10 @@ pub mod render {
     pub use phantom_render::*;
 }
 
+pub mod window {
+    pub use phantom_window::*;
+}
+
 pub mod world {
     pub use phantom_world::*;
 }

@@ -1,12 +1,12 @@
-use phantom_world::nalgebra_glm as glm;
-use std::collections::HashMap;
-use winit::{
+use phantom_window::winit::{
     dpi::PhysicalPosition,
     event::{
         ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
         WindowEvent,
     },
 };
+use phantom_world::nalgebra_glm as glm;
+use std::collections::HashMap;
 
 pub type KeyMap = HashMap<VirtualKeyCode, ElementState>;
 

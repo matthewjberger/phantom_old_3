@@ -1,11 +1,11 @@
 use crate::Resources;
 use gilrs::Event as GilrsEvent;
-use std::path::Path;
-use thiserror::Error;
-use winit::{
+use phantom_window::winit::{
     dpi::PhysicalSize,
     event::{ElementState, Event, KeyboardInput, MouseButton},
 };
+use std::path::Path;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum StateMachineError {

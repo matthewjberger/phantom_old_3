@@ -1,4 +1,5 @@
 use crate::{ResourceError, Resources};
+use phantom_window::winit::{event::VirtualKeyCode, window::CursorGrabMode};
 use phantom_world::{
     legion::{
         world::{ComponentError, EntityAccessError},
@@ -7,7 +8,6 @@ use phantom_world::{
     nalgebra_glm as glm, Entity, Transform,
 };
 use thiserror::Error;
-use winit::{event::VirtualKeyCode, window::CursorGrabMode};
 
 #[derive(Error, Debug)]
 pub enum CameraError {
