@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.68"
 bytemuck = { version = "1.13.0", features = ["derive"] }
 egui = "0.20.1"
 legion = "0.4.0"
@@ -13,6 +12,5 @@ nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-byt
 phantom_config = { path = "../phantom_config" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_world = { path = "../phantom_world" }
-pollster = "0.2.5"
 raw-window-handle = "0.5.0"
 thiserror = "1.0.38"
