@@ -94,7 +94,7 @@ pub fn run(initial_state: impl State + 'static, config: AppConfig) -> Result<()>
 
     let mut renderer = create_gpu_device(
         &window,
-        &Viewport {
+        Viewport {
             width: config.window.width as _,
             height: config.window.height as _,
             ..Default::default()

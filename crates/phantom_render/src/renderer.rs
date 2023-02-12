@@ -1,4 +1,4 @@
-use crate::device::VulkanDevice;
+use crate::vulkan::VulkanDevice;
 use phantom_config::Config;
 use phantom_gui::GuiFrame;
 use phantom_world::{Viewport, World};
@@ -17,8 +17,9 @@ pub trait Renderer {
 }
 
 pub fn create_gpu_device<W: HasRawWindowHandle + HasRawDisplayHandle>(
-    _window_handle: &W,
-    _viewport: &Viewport,
+    window_handle: &W,
+    viewport: Viewport,
 ) -> Result<Box<dyn Renderer>, Box<dyn Error>> {
-    Ok(Box::new(VulkanDevice::default()) as _)
+    let device = VulkanDevice::new(window_handle, viewport)?;
+    Ok(Box::new(device) as _)
 }

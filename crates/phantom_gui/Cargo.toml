@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 egui = "0.21.0"
-egui-gizmo = { git = "https://github.com/matthewjberger/egui-gizmo", branch = "egui-21" }
+egui-gizmo = "0.10.0"
 egui-winit = "0.21.0"
 phantom_world = { path = "../phantom_world" }
 phantom_window = { path = "../phantom_window" }
