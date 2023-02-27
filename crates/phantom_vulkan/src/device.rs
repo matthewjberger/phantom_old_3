@@ -1,4 +1,4 @@
-use crate::GpuDevice;
+use phantom_render_traits::GpuDevice;
 use phantom_world::Viewport;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
@@ -14,7 +14,7 @@ pub enum Error {
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
-pub(crate) struct VulkanGpuDevice;
+pub struct VulkanGpuDevice;
 
 impl VulkanGpuDevice {
     pub fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(

@@ -1,4 +1,4 @@
-mod backend;
-mod renderer;
+mod device;
 
-pub use self::renderer::{create_renderer, Backend, GpuDevice};
+pub use self::device::{create_renderer, Backend};
+pub use phantom_render_traits;

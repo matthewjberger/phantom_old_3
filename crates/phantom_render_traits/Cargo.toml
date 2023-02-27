@@ -1,0 +1,9 @@
+[package]
+name = "phantom_render_traits"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+phantom_config = { path = "../phantom_config" }
+phantom_gui = { path = "../phantom_gui" }
+phantom_world = { path = "../phantom_world" }

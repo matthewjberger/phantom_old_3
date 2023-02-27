@@ -12,7 +12,7 @@ use wgpu::{
     TextureFormat, VertexAttribute,
 };
 
-pub(crate) struct WorldRender {
+pub struct WorldRender {
     pub geometry: Geometry,
     pub uniform: UniformBinding,
     pub dynamic_uniform: DynamicUniformBinding,
@@ -173,7 +173,7 @@ pub fn create_vertex_description(attributes: &[VertexAttribute]) -> wgpu::Vertex
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub(crate) struct Light {
+pub struct Light {
     position: glm::Vec3,
     padding_0: f32,
     color: glm::Vec3,
@@ -225,7 +225,7 @@ impl Geometry {
     }
 }
 
-pub(crate) struct UniformBinding {
+pub struct UniformBinding {
     pub buffer: wgpu::Buffer,
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
@@ -276,14 +276,14 @@ impl UniformBinding {
 
 #[repr(C)]
 #[derive(Default, Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub(crate) struct Uniform {
+pub struct Uniform {
     pub view: glm::Mat4,
     pub projection: glm::Mat4,
     pub camera_position: glm::Vec4,
     pub light: Light,
 }
 
-pub(crate) struct DynamicUniformBinding {
+pub struct DynamicUniformBinding {
     pub alignment: wgpu::BufferAddress,
     pub buffer: wgpu::Buffer,
     pub bind_group_layout: wgpu::BindGroupLayout,
@@ -350,7 +350,7 @@ impl DynamicUniformBinding {
 
 #[repr(C, align(256))]
 #[derive(Default, Copy, Clone, Debug, bytemuck::Zeroable)]
-pub(crate) struct DynamicUniform {
+pub struct DynamicUniform {
     pub model: glm::Mat4,
 }
 

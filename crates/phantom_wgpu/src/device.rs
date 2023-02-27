@@ -1,13 +1,13 @@
 use super::{gui::GuiRender, world::WorldRender};
-use crate::{Backend, GpuDevice};
 use phantom_config::Config;
 use phantom_gui::GuiFrame;
+use phantom_render_traits::GpuDevice;
 use phantom_world::{Viewport, World};
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
 use wgpu::{
-    self, Backend as WgpuBackend, Backends, Device, Queue, RequestDeviceError, Surface,
-    SurfaceConfiguration, SurfaceError, TextureFormat, TextureViewDescriptor,
+    self, Backends, Device, Queue, RequestDeviceError, Surface, SurfaceConfiguration, SurfaceError,
+    TextureFormat, TextureViewDescriptor,
 };
 
 #[derive(Error, Debug)]
@@ -27,7 +27,7 @@ pub enum Error {
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
-pub(crate) struct WgpuRenderer {
+pub struct WgpuRenderer {
     pub surface: Surface,
     pub device: Device,
     pub queue: Queue,
@@ -148,7 +148,7 @@ impl WgpuRenderer {
 
     pub fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(
         window_handle: &W,
-        backend: &Backend,
+        backend: wgpu::Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
         pollster::block_on(WgpuRenderer::new_async(window_handle, backend, viewport))
@@ -156,10 +156,10 @@ impl WgpuRenderer {
 
     async fn new_async<W: HasRawWindowHandle + HasRawDisplayHandle>(
         window_handle: &W,
-        backend: &Backend,
+        backend: wgpu::Backend,
         viewport: &Viewport,
     ) -> Result<Self> {
-        let backend: Backends = map_backend(backend)?.into();
+        let backend: Backends = backend.into();
 
         let instance = wgpu::Instance::new(backend);
 
@@ -244,16 +244,6 @@ impl WgpuRenderer {
             .await
             .map_err(Error::RequestDevice)
     }
-}
-
-fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
-    let backend = match backend {
-        Backend::Dx11 => WgpuBackend::Dx11,
-        Backend::Dx12 => WgpuBackend::Dx12,
-        Backend::Metal => WgpuBackend::Metal,
-        _ => WgpuBackend::Vulkan,
-    };
-    Ok(backend)
 }
 
 fn create_depth_texture(

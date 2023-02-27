@@ -6,7 +6,7 @@ pub use self::{input::*, system::*};
 use gilrs::Gilrs;
 use phantom_config::Config;
 use phantom_gui::Gui;
-use phantom_render::GpuDevice;
+use phantom_render::phantom_render_traits::GpuDevice;
 use phantom_window::winit::{
     dpi::PhysicalPosition,
     error::ExternalError,
