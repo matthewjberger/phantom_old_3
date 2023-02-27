@@ -251,7 +251,7 @@ fn map_backend(backend: &Backend) -> Result<WgpuBackend> {
         Backend::Dx11 => WgpuBackend::Dx11,
         Backend::Dx12 => WgpuBackend::Dx12,
         Backend::Metal => WgpuBackend::Metal,
-        Backend::Vulkan => WgpuBackend::Vulkan,
+        _ => WgpuBackend::Vulkan,
     };
     Ok(backend)
 }

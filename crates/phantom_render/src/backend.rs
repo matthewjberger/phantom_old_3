@@ -1,3 +1,4 @@
+mod vulkan;
 mod wgpu;
 
-pub(crate) use self::wgpu::WgpuRenderer;
+pub(crate) use self::{vulkan::VulkanRenderer, wgpu::WgpuRenderer};

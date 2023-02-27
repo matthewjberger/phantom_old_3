@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = [ "apps/*", "crates/*" ]
+default-members = ["apps/*"]
+members = ["apps/*", "crates/*"]
 
 [dependencies]
 phantom_app = { path = "crates/phantom_app" }
