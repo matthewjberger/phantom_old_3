@@ -9,8 +9,8 @@ jobs:
     name: Lint, Build, Test
     runs-on: ubuntu-latest
     steps:
-      - name: Install libudev-dev
-        run: sudo apt-get install -y libudev-dev
+      - name: Install dependencies
+        run: sudo apt-get install -y libudev-dev libasound2-dev
 
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -39,6 +39,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --all --workspace
 
       - name: Test (cargo test)
         uses: actions-rs/cargo@v1
