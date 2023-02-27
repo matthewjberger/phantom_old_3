@@ -189,7 +189,7 @@ mod tests {
         let root_nodes = scenegraph.root_nodes()?;
         assert_eq!(root_nodes.len(), 1);
         assert_eq!(
-            root_nodes.iter().next(),
+            root_nodes.first(),
             Some(&SceneGraphNode::<i32> {
                 value: FIRST_VALUE,
                 offset: 0
@@ -205,7 +205,7 @@ mod tests {
 
         let root_nodes = scenegraph.root_node_indices()?;
         assert_eq!(root_nodes.len(), 1);
-        assert_eq!(root_nodes.iter().next(), Some(&first_node_index));
+        assert_eq!(root_nodes.first(), Some(&first_node_index));
 
         Ok(())
     }
@@ -258,14 +258,14 @@ mod tests {
         let nodes = scenegraph.collect_nodes()?;
         assert_eq!(nodes.len(), 2);
         assert_eq!(
-            nodes.iter().next(),
+            nodes.first(),
             Some(&SceneGraphNode::<i32> {
                 value: FIRST_VALUE,
                 offset: 0
             })
         );
         assert_eq!(
-            nodes.iter().skip(1).next(),
+            nodes.get(1),
             Some(&SceneGraphNode::<i32> {
                 value: SECOND_VALUE,
                 offset: 1
@@ -303,24 +303,24 @@ mod tests {
     #[test]
     fn has_neighbors() -> Result<()> {
         let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
-        assert_eq!(scenegraph.has_neighbors(first_node_index), true);
-        assert_eq!(scenegraph.has_neighbors(second_node_index), true);
+        assert!(scenegraph.has_neighbors(first_node_index));
+        assert!(scenegraph.has_neighbors(second_node_index));
         Ok(())
     }
 
     #[test]
     fn has_parents() -> Result<()> {
         let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
-        assert_eq!(scenegraph.has_parents(first_node_index), false);
-        assert_eq!(scenegraph.has_parents(second_node_index), true);
+        assert!(!scenegraph.has_parents(first_node_index));
+        assert!(scenegraph.has_parents(second_node_index));
         Ok(())
     }
 
     #[test]
     fn has_children() -> Result<()> {
         let (scenegraph, first_node_index, second_node_index) = create_scenegraph();
-        assert_eq!(scenegraph.has_children(first_node_index), true);
-        assert_eq!(scenegraph.has_children(second_node_index), false);
+        assert!(scenegraph.has_children(first_node_index));
+        assert!(!scenegraph.has_children(second_node_index));
         Ok(())
     }
 
