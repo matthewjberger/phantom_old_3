@@ -1,7 +1,9 @@
 use egui::{ClippedPrimitive, Context as GuiContext, FullOutput, TexturesDelta};
 use egui_wgpu::renderer::ScreenDescriptor;
 use egui_winit::State;
-use phantom_window::winit::{event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window};
+use phantom_window::winit::{
+    event::WindowEvent, event_loop::EventLoopWindowTarget, window::Window,
+};
 
 pub struct GuiFrame<'a> {
     pub textures_delta: &'a TexturesDelta,
