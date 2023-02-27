@@ -128,9 +128,9 @@ impl Editor {
 
                 let scene = &mut resources.world.scene;
                 let ecs = &mut resources.world.ecs;
-                for (graph_index, graph) in scene.graphs.iter_mut().enumerate() {
+                for graph in scene.graphs.iter_mut() {
                     for node_index in graph.root_node_indices().unwrap() {
-                        self.print_node(ecs, graph, graph_index, node_index, ui);
+                        self.print_node(ecs, graph, node_index, ui);
                     }
                 }
 
@@ -142,7 +142,6 @@ impl Editor {
         &mut self,
         ecs: &mut Ecs,
         graph: &mut EntitySceneGraph,
-        graph_index: usize,
         entity_index: NodeIndex,
         ui: &mut Ui,
     ) {
@@ -176,7 +175,7 @@ impl Editor {
                 .show(ui, |ui| {
                     let mut neighbors = graph.neighbors(entity_index, Outgoing);
                     while let Some(child) = neighbors.next_node(&graph.0) {
-                        self.print_node(ecs, graph, graph_index, child, ui);
+                        self.print_node(ecs, graph, child, ui);
                     }
                 })
                 .header_response
