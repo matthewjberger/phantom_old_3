@@ -50,13 +50,9 @@ pub enum GltfError {
 
 type Result<T, E = GltfError> = std::result::Result<T, E>;
 
-pub fn create_scene_graph(
-    node: &gltf::Node,
-    ecs: &mut Ecs,
-    entities: &[Entity],
-) -> EntitySceneGraph {
+pub fn create_scene_graph(node: &gltf::Node, entities: &[Entity]) -> EntitySceneGraph {
     let mut node_graph = EntitySceneGraph::new();
-    graph_node(&mut node_graph, node, NodeIndex::new(0), ecs, entities);
+    graph_node(&mut node_graph, node, NodeIndex::new(0), entities);
     node_graph
 }
 
@@ -64,7 +60,6 @@ pub fn graph_node(
     graph: &mut EntitySceneGraph,
     gltf_node: &gltf::Node,
     parent_index: NodeIndex,
-    ecs: &mut Ecs,
     entities: &[Entity],
 ) {
     let entity = entities[gltf_node.index()];
@@ -73,7 +68,7 @@ pub fn graph_node(
         graph.add_edge(parent_index, index);
     }
     for child in gltf_node.children() {
-        graph_node(graph, &child, index, ecs, entities);
+        graph_node(graph, &child, index, entities);
     }
 }
 
@@ -144,7 +139,7 @@ pub fn load_gltf(path: impl AsRef<Path>, world: &mut World) -> Result<()> {
     }
 
     // Only merge default scene
-    let new_scenes = load_scenes(&gltf, &mut world.ecs, &entities);
+    let new_scenes = load_scenes(&gltf, &entities);
     if let Some(new_scene) = new_scenes.into_iter().next() {
         new_scene.graphs.into_iter().for_each(|graph| {
             world.scene.graphs.push(graph);
@@ -293,13 +288,13 @@ fn map_gltf_alpha_mode(alpha_mode: &gltf::material::AlphaMode) -> AlphaMode {
     }
 }
 
-fn load_scenes(gltf: &gltf::Document, ecs: &mut Ecs, entities: &[Entity]) -> Vec<Scene> {
+fn load_scenes(gltf: &gltf::Document, entities: &[Entity]) -> Vec<Scene> {
     gltf.scenes()
         .map(|scene| Scene {
             name: scene.name().unwrap_or(DEFAULT_NAME).to_string(),
             graphs: scene
                 .nodes()
-                .map(|node| create_scene_graph(&node, ecs, entities))
+                .map(|node| create_scene_graph(&node, entities))
                 .collect(),
             skybox: None,
         })

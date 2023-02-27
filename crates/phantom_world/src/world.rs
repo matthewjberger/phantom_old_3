@@ -391,21 +391,20 @@ impl World {
     }
 
     fn insert_collider(&mut self, entity: Entity, collider: Collider) -> Result<(), WorldError> {
-        Ok(
-            match self.ecs.entry_mut(entity)?.get_component_mut::<RigidBody>() {
-                Ok(rigid_body) => {
-                    let handle = self.physics.colliders.insert_with_parent(
-                        collider,
-                        rigid_body.handle,
-                        &mut self.physics.bodies,
-                    );
-                    rigid_body.colliders.push(handle);
-                }
-                Err(_) => {
-                    self.physics.colliders.insert(collider);
-                }
-            },
-        )
+        match self.ecs.entry_mut(entity)?.get_component_mut::<RigidBody>() {
+            Ok(rigid_body) => {
+                let handle = self.physics.colliders.insert_with_parent(
+                    collider,
+                    rigid_body.handle,
+                    &mut self.physics.bodies,
+                );
+                rigid_body.colliders.push(handle);
+            }
+            Err(_) => {
+                self.physics.colliders.insert(collider);
+            }
+        };
+        Ok(())
     }
 
     pub fn add_trimesh_collider(
@@ -568,7 +567,7 @@ impl World {
     }
 
     pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
-        std::fs::write(path, &self.as_bytes()?).map_err(WorldError::SaveWorldToFile)
+        std::fs::write(path, self.as_bytes()?).map_err(WorldError::SaveWorldToFile)
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {

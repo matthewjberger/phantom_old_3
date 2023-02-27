@@ -14,7 +14,7 @@ format:
   cargo fmt --all
 
 lint:
-  cargo clippy
+  cargo clippy -- -D warnings
 
 test:
   cargo test --workspace

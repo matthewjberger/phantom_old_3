@@ -29,11 +29,10 @@ pub fn create_renderer<W: HasRawWindowHandle + HasRawDisplayHandle>(
 }
 
 fn map_backend(backend: &Backend) -> wgpu::Backend {
-    let backend = match backend {
+    match backend {
         Backend::Dx11 => wgpu::Backend::Dx11,
         Backend::Dx12 => wgpu::Backend::Dx12,
         Backend::Metal => wgpu::Backend::Metal,
         _ => wgpu::Backend::Vulkan,
-    };
-    backend
+    }
 }
