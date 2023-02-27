@@ -1,10 +1,10 @@
-use crate::Renderer;
+use crate::GpuDevice;
 use phantom_world::Viewport;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum RendererError {
+pub enum Error {
     // #[error("No suitable GPU adapters found on the system!")]
     // NoSuitableGpuAdapters,
 
@@ -12,11 +12,11 @@ pub enum RendererError {
     // NoSupportedSwapchainFormat,
 }
 
-type Result<T, E = RendererError> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
-pub(crate) struct VulkanRenderer;
+pub(crate) struct VulkanGpuDevice;
 
-impl VulkanRenderer {
+impl VulkanGpuDevice {
     pub fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(
         window_handle: &W,
         viewport: &Viewport,
@@ -32,7 +32,7 @@ impl VulkanRenderer {
     }
 }
 
-impl Renderer for VulkanRenderer {
+impl GpuDevice for VulkanGpuDevice {
     fn load_world(
         &mut self,
         _world: &phantom_world::World,

@@ -6,7 +6,7 @@ pub use self::{input::*, system::*};
 use gilrs::Gilrs;
 use phantom_config::Config;
 use phantom_gui::Gui;
-use phantom_render::Renderer;
+use phantom_render::GpuDevice;
 use phantom_window::winit::{
     dpi::PhysicalPosition,
     error::ExternalError,
@@ -50,7 +50,7 @@ pub struct Resources<'a> {
     pub gilrs: &'a mut Gilrs,
     pub gui: &'a mut Gui,
     pub input: &'a mut Input,
-    pub renderer: &'a mut Box<dyn Renderer>,
+    pub renderer: &'a mut Box<dyn GpuDevice>,
     pub system: &'a mut System,
     pub world: &'a mut World,
 }

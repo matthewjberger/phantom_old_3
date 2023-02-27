@@ -1,5 +1,5 @@
 use super::{gui::GuiRender, world::WorldRender};
-use crate::{Backend, Renderer};
+use crate::{Backend, GpuDevice};
 use phantom_config::Config;
 use phantom_gui::GuiFrame;
 use phantom_world::{Viewport, World};
@@ -11,7 +11,7 @@ use wgpu::{
 };
 
 #[derive(Error, Debug)]
-pub enum RendererError {
+pub enum Error {
     #[error("Failed to get the current surface texture!")]
     GetSurfaceTexture(#[source] SurfaceError),
 
@@ -25,7 +25,7 @@ pub enum RendererError {
     RequestDevice(#[source] RequestDeviceError),
 }
 
-type Result<T, E = RendererError> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub(crate) struct WgpuRenderer {
     pub surface: Surface,
@@ -37,7 +37,7 @@ pub(crate) struct WgpuRenderer {
     pub world_render: Option<WorldRender>,
 }
 
-impl Renderer for WgpuRenderer {
+impl GpuDevice for WgpuRenderer {
     fn load_world(&mut self, world: &World) -> Result<(), Box<dyn std::error::Error>> {
         self.world_render = Some(WorldRender::new(&self.device, self.config.format, world));
         Ok(())
@@ -95,7 +95,7 @@ impl Renderer for WgpuRenderer {
         let surface_texture = self
             .surface
             .get_current_texture()
-            .map_err(RendererError::GetSurfaceTexture)?;
+            .map_err(Error::GetSurfaceTexture)?;
 
         let view = surface_texture
             .texture
@@ -172,7 +172,7 @@ impl WgpuRenderer {
         let swapchain_format = *surface
             .get_supported_formats(&adapter)
             .first()
-            .ok_or(RendererError::NoSupportedSwapchainFormat)?;
+            .ok_or(Error::NoSupportedSwapchainFormat)?;
 
         let config = SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -225,7 +225,7 @@ impl WgpuRenderer {
     ) -> Result<wgpu::Adapter> {
         wgpu::util::initialize_adapter_from_env_or_default(instance, backend, Some(surface))
             .await
-            .ok_or(RendererError::NoSuitableGpuAdapters)
+            .ok_or(Error::NoSuitableGpuAdapters)
     }
 
     async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue)> {
@@ -242,7 +242,7 @@ impl WgpuRenderer {
                 None,
             )
             .await
-            .map_err(RendererError::RequestDevice)
+            .map_err(Error::RequestDevice)
     }
 }
 

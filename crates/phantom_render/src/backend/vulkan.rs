@@ -1,3 +1,3 @@
-mod renderer;
+mod device;
 
-pub(crate) use self::renderer::VulkanRenderer;
+pub(crate) use self::device::VulkanGpuDevice;

@@ -1,4 +1,4 @@
-use crate::backend::{VulkanRenderer, WgpuRenderer};
+use crate::backend::{VulkanGpuDevice, WgpuRenderer};
 use phantom_config::Config;
 use phantom_gui::GuiFrame;
 use phantom_world::{Viewport, World};
@@ -14,7 +14,7 @@ pub enum Backend {
     VulkanWgpu,
 }
 
-pub trait Renderer {
+pub trait GpuDevice {
     fn load_world(&mut self, world: &World) -> Result<(), Box<dyn Error>>;
     fn resize(&mut self, dimensions: [u32; 2]) -> Result<(), Box<dyn Error>>;
     fn render_frame(
@@ -29,9 +29,9 @@ pub fn create_renderer<W: HasRawWindowHandle + HasRawDisplayHandle>(
     backend: &Backend,
     window_handle: &W,
     viewport: &Viewport,
-) -> Result<Box<dyn Renderer>, Box<dyn Error>> {
+) -> Result<Box<dyn GpuDevice>, Box<dyn Error>> {
     let backend = if let Backend::Vulkan = backend {
-        Box::new(VulkanRenderer::new(&window_handle, viewport)?) as _
+        Box::new(VulkanGpuDevice::new(&window_handle, viewport)?) as _
     } else {
         Box::new(WgpuRenderer::new(&window_handle, backend, viewport)?) as _
     };
