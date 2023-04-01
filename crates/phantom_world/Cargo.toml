@@ -6,15 +6,15 @@ edition = "2021"
 [dependencies]
 bincode = "1.3.3"
 bmfont = { version = "0.3.3", features = ["serde"] }
-bytemuck = { version = "1.13.0", features = ["derive"] }
-gltf = { version = "1.0.0", features = ["names", "KHR_lights_punctual", "KHR_materials_unlit"] }
-image = "0.24.5"
+bytemuck = { version = "1.13.1", features = ["derive"] }
+gltf = { version = "1.1.0", features = ["names", "KHR_lights_punctual", "KHR_materials_unlit"] }
+image = "0.24.6"
 lazy_static = "1.4.0"
 legion = "0.4.0"
 log = "0.4.17"
-nalgebra = "0.32.1"
+nalgebra = "0.32.2"
 nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
-petgraph = { version = "0.6.2", features = ["serde-1"] }
-rapier3d = { version = "0.17.0", features = ["serde-serialize"] }
-serde = "1.0.152"
-thiserror = "1.0.38"
+petgraph = { version = "0.6.3", features = ["serde-1"] }
+rapier3d = { version = "0.17.2", features = ["serde-serialize"] }
+serde = "1.0.159"
+thiserror = "1.0.40"
