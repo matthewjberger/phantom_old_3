@@ -235,7 +235,8 @@ impl Editor {
                         if let Some(gizmo_result) =
                             self.gizmo.render(ui, transform.matrix(), view, projection)
                         {
-                            let model_matrix: glm::Mat4 = gizmo_result.transform.into();
+                            let model_matrix: glm::Mat4 =
+                                gizmo_result.transform_cols_array_2d().into();
                             let gizmo_transform = Transform::from(model_matrix);
                             let mut entry = resources.world.ecs.entry_mut(*entity).unwrap();
                             let mut transform = entry.get_component_mut::<Transform>().unwrap();

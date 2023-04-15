@@ -6,14 +6,14 @@ edition = "2021"
 
 [dependencies]
 bytemuck = { version = "1.13.1", features = ["derive"] }
-egui = "0.20.1"
+egui = "0.21.0"
 log = "0.4.17"
 nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
 phantom_config = { path = "../phantom_config" }
 phantom_gui = { path = "../phantom_gui" }
 phantom_render_traits = { path = "../phantom_render_traits" }
 phantom_world = { path = "../phantom_world" }
-pollster = "0.2.5"
+pollster = "0.3.0"
 raw-window-handle = "0.5.2"
 thiserror = "1.0.40"
 

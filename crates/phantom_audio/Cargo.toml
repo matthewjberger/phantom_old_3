@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rodio = "0.16.0"
+rodio = "0.17.1"

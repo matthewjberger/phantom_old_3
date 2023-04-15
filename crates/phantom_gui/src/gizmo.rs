@@ -128,11 +128,11 @@ impl GizmoWidget {
         projection: glm::Mat4,
     ) -> Option<GizmoResult> {
         // Snapping is enabled with ctrl key.
-        let snapping = ui.input().modifiers.command;
+        let snapping = ui.input(|input| input.modifiers.command);
 
         // Snap angle to use for rotation when snapping is enabled.
         // Smaller snap angle is used when shift key is pressed.
-        let snap_angle = if ui.input().modifiers.shift {
+        let snap_angle = if ui.input(|input| input.modifiers.shift) {
             self.snap_angle / 2.0
         } else {
             self.snap_angle
@@ -140,7 +140,7 @@ impl GizmoWidget {
 
         // Snap distance to use for translation when snapping is enabled.
         // Smaller snap distance is used when shift key is pressed.
-        let snap_distance = if ui.input().modifiers.shift {
+        let snap_distance = if ui.input(|input| input.modifiers.shift) {
             self.snap_distance / 2.0
         } else {
             self.snap_distance

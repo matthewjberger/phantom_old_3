@@ -6,8 +6,8 @@ use phantom_world::{Viewport, World};
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use thiserror::Error;
 use wgpu::{
-    self, Backends, Device, Queue, RequestDeviceError, Surface, SurfaceConfiguration, SurfaceError,
-    TextureFormat, TextureViewDescriptor,
+    self, Backends, Device, InstanceDescriptor, Queue, RequestDeviceError, Surface,
+    SurfaceConfiguration, SurfaceError, TextureFormat, TextureViewDescriptor,
 };
 
 #[derive(Error, Debug)]
@@ -161,16 +161,21 @@ impl WgpuRenderer {
     ) -> Result<Self> {
         let backend: Backends = backend.into();
 
-        let instance = wgpu::Instance::new(backend);
+        let instance_descriptor = InstanceDescriptor {
+            backends: backend.into(),
+            ..Default::default()
+        };
+        let instance = wgpu::Instance::new(instance_descriptor);
 
-        let surface = unsafe { instance.create_surface(window_handle) };
+        let surface = unsafe { instance.create_surface(window_handle).unwrap() };
 
         let adapter = Self::create_adapter(&instance, &surface, backend).await?;
 
         let (device, queue) = Self::request_device(&adapter).await?;
 
         let swapchain_format = *surface
-            .get_supported_formats(&adapter)
+            .get_capabilities(&adapter)
+            .formats
             .first()
             .ok_or(Error::NoSupportedSwapchainFormat)?;
 
@@ -181,6 +186,7 @@ impl WgpuRenderer {
             height: viewport.height as _,
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            view_formats: vec![swapchain_format],
         };
         surface.configure(&device, &config);
 
@@ -265,6 +271,7 @@ fn create_depth_texture(
         dimension: wgpu::TextureDimension::D2,
         format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[format],
     };
 
     let texture = device.create_texture(&texture_descriptor);
