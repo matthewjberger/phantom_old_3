@@ -16,5 +16,5 @@ nalgebra = "0.32.2"
 nalgebra-glm = { version = "0.18.0", features = ["serde-serialize", "convert-bytemuck"] }
 petgraph = { version = "0.6.3", features = ["serde-1"] }
 rapier3d = { version = "0.17.2", features = ["serde-serialize"] }
-serde = "1.0.159"
+serde = "1.0.160"
 thiserror = "1.0.40"
