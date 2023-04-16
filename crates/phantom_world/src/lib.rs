@@ -9,8 +9,8 @@ mod transform;
 mod world;
 
 pub use self::{
-    animation::*, camera::*, gltf::*, physics::*, registry::*, scenegraph::*, texture::*,
-    transform::*, world::*,
+	animation::*, camera::*, gltf::*, physics::*, registry::*, scenegraph::*, texture::*,
+	transform::*, world::*,
 };
 use serde::{Deserialize, Serialize};
 

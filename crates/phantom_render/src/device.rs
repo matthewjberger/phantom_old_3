@@ -7,32 +7,32 @@ use std::error::Error;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Backend {
-    Dx11,
-    Dx12,
-    Metal,
-    Vulkan,
-    VulkanWgpu,
+	Dx11,
+	Dx12,
+	Metal,
+	Vulkan,
+	VulkanWgpu,
 }
 
 pub fn create_renderer<W: HasRawWindowHandle + HasRawDisplayHandle>(
-    backend: &Backend,
-    window_handle: &W,
-    viewport: &Viewport,
+	backend: &Backend,
+	window_handle: &W,
+	viewport: &Viewport,
 ) -> Result<Box<dyn GpuDevice>, Box<dyn Error>> {
-    let backend = if let Backend::Vulkan = backend {
-        Box::new(VulkanGpuDevice::new(&window_handle, viewport)?) as _
-    } else {
-        let backend = map_backend(backend);
-        Box::new(WgpuRenderer::new(&window_handle, backend, viewport)?) as _
-    };
-    Ok(backend)
+	let backend = if let Backend::Vulkan = backend {
+		Box::new(VulkanGpuDevice::new(&window_handle, viewport)?) as _
+	} else {
+		let backend = map_backend(backend);
+		Box::new(WgpuRenderer::new(&window_handle, backend, viewport)?) as _
+	};
+	Ok(backend)
 }
 
 fn map_backend(backend: &Backend) -> wgpu::Backend {
-    match backend {
-        Backend::Dx11 => wgpu::Backend::Dx11,
-        Backend::Dx12 => wgpu::Backend::Dx12,
-        Backend::Metal => wgpu::Backend::Metal,
-        _ => wgpu::Backend::Vulkan,
-    }
+	match backend {
+		Backend::Dx11 => wgpu::Backend::Dx11,
+		Backend::Dx12 => wgpu::Backend::Dx12,
+		Backend::Metal => wgpu::Backend::Metal,
+		_ => wgpu::Backend::Vulkan,
+	}
 }
