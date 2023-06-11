@@ -7,6 +7,6 @@ edition = "2021"
 egui = "0.21.0"
 egui-gizmo = "0.10.0"
 egui-wgpu = { version = "0.21.0", features = ["winit"] }
-egui-winit = "0.21.1"
+egui-winit = "0.21.0"
 phantom_world = { path = "../phantom_world" }
 phantom_window = { path = "../phantom_window" }
